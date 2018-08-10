@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/DS1VirtualSynchrony.iml" filepath="$PROJECT_DIR$/.idea/DS1VirtualSynchrony.iml" />
+      <module fileurl="file://$PROJECT_DIR$/DS1VirtualSynchrony.iml" filepath="$PROJECT_DIR$/DS1VirtualSynchrony.iml" />
     </modules>
   </component>
 </project>
