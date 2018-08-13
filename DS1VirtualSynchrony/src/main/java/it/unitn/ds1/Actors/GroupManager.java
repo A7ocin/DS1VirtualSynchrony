@@ -7,6 +7,7 @@ import akka.actor.ActorRef;
 // Local imports
 import it.unitn.ds1.Enums.ActorStatusType;
 import it.unitn.ds1.Messages.JoinRequest;
+import it.unitn.ds1.Messages.AssignId;
 
 /**
  * Dedicated reliable group manager.
@@ -17,6 +18,7 @@ import it.unitn.ds1.Messages.JoinRequest;
  */
 public class GroupManager extends GenericActor{
 
+    private int participantId = 1;
     /**
      * Group Manager constructor. Its ID will always be 0 by default.
      */
@@ -30,7 +32,10 @@ public class GroupManager extends GenericActor{
     }
 
     private void onJoinRequest(JoinRequest request){
-        System.out.format("[%d] New join request from actor %d\n", myId, request.senderId);
+        ActorRef senderRef = getSender();
+        senderRef.tell(new AssignId(myId, participantId), getSelf());
+        System.out.format("[%d] New join request from actor %d\n", myId, participantId);
+        participantId += 1;
         this.status = ActorStatusType.WAITING;
     }
 

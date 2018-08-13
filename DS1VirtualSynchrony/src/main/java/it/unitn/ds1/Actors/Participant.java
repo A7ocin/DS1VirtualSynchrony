@@ -6,6 +6,7 @@ import akka.actor.ActorRef;
 
 // Local imports
 import it.unitn.ds1.Messages.JoinRequest;
+import it.unitn.ds1.Messages.AssignId;
 
 // Java imports
 import java.lang.Exception;
@@ -29,6 +30,15 @@ public class Participant extends GenericActor{
         return Props.create(Participant.class, () -> new Participant(remotePath));
     }
 
+    public void onAssignId(AssignId request){
+        if(isCrashed()){
+            return;
+        }
+        myId = request.id;
+
+        System.out.format("[%d] New id: %d\n", myId, myId);
+    }
+
     @Override
     public void preStart(){
         System.out.println("- New actor is asking to join");
@@ -49,6 +59,7 @@ public class Participant extends GenericActor{
     @Override
     public Receive createReceive(){
         return receiveBuilder()
+                .match(AssignId.class, this::onAssignId)
                 .build();
     }
 

@@ -31,4 +31,8 @@ public abstract class GenericActor extends AbstractActor{
         this.status = ActorStatusType.STARTED;
     }
 
+    public boolean isCrashed(){
+        return this.status == ActorStatusType.CRASHED;
+    }
+
 }
