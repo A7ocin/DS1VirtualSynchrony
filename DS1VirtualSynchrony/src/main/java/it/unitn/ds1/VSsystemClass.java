@@ -9,7 +9,8 @@ import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.Config;
 
 // Local imports
-import it.unitn.ds1.Actors.ActorType;
+import it.unitn.ds1.Enums.ActorType;
+import it.unitn.ds1.Enums.ActorStatusType;
 import it.unitn.ds1.Actors.GenericActor;
 import it.unitn.ds1.Actors.GroupManager;
 import it.unitn.ds1.Actors.Participant;

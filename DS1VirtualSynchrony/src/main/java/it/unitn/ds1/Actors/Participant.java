@@ -4,6 +4,12 @@ package it.unitn.ds1.Actors;
 import akka.actor.Props;
 import akka.actor.ActorRef;
 
+// Local imports
+import it.unitn.ds1.Messages.JoinRequest;
+
+// Java imports
+import java.lang.Exception;
+
 /**
  * Participant class.
  * - It is not allowed to send view update messages
@@ -19,9 +25,20 @@ public class Participant extends GenericActor{
         super(remotePath);
     }
 
-
     static public Props props(String remotePath) {
         return Props.create(Participant.class, () -> new Participant(remotePath));
+    }
+
+    @Override
+    public void preStart(){
+        System.out.println("- New actor is asking to join");
+        try{
+            super.preStart();
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
+        getContext().actorSelection(this.remotePath).tell(new JoinRequest(this.myId), getSelf());
     }
 
     /**

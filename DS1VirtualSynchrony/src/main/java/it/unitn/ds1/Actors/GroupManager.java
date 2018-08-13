@@ -4,6 +4,10 @@ package it.unitn.ds1.Actors;
 import akka.actor.Props;
 import akka.actor.ActorRef;
 
+// Local imports
+import it.unitn.ds1.Enums.ActorStatusType;
+import it.unitn.ds1.Messages.JoinRequest;
+
 /**
  * Dedicated reliable group manager.
  * - ID = 0
@@ -25,6 +29,11 @@ public class GroupManager extends GenericActor{
         return Props.create(GroupManager.class, () -> new GroupManager(id, remotePath));
     }
 
+    private void onJoinRequest(JoinRequest request){
+        System.out.format("[%d] New join request from actor %d\n", myId, request.senderId);
+        this.status = ActorStatusType.WAITING;
+    }
+
     /**
      * Handling incoming messages.
      * Define the mapping between incoming message classes and the methods of the actor
@@ -33,6 +42,7 @@ public class GroupManager extends GenericActor{
     @Override
     public Receive createReceive(){
         return receiveBuilder()
+                .match(JoinRequest.class, this::onJoinRequest)
                 .build();
     }
 

@@ -1,4 +1,4 @@
-package it.unitn.ds1.Actors;
+package it.unitn.ds1.Enums;
 
 /**
  * Types of actors in the system:

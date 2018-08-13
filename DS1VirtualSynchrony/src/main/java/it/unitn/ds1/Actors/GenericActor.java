@@ -4,6 +4,8 @@ package it.unitn.ds1.Actors;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 
+// Local imports
+import it.unitn.ds1.Enums.ActorStatusType;
 
 /**
  * Generic Akka Actor.
@@ -17,6 +19,7 @@ public abstract class GenericActor extends AbstractActor{
 
     protected int myId;             // Unique ID. Manager has a fixed ID = 0
     protected String remotePath;    // Remote TCP path for accessing a remote actor
+    public ActorStatusType status;  // Current status of the actor
 
     /**
      * Generic Actor constructor.
@@ -25,6 +28,7 @@ public abstract class GenericActor extends AbstractActor{
      */
     public GenericActor(String remotePath){
         this.remotePath = remotePath;
+        this.status = ActorStatusType.STARTED;
     }
 
 }
