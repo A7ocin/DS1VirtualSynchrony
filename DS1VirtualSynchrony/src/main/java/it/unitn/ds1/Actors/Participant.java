@@ -7,6 +7,7 @@ import akka.actor.ActorRef;
 // Local imports
 import it.unitn.ds1.Messages.JoinRequest;
 import it.unitn.ds1.Messages.AssignId;
+import it.unitn.ds1.Messages.ChangeView;
 
 // Java imports
 import java.lang.Exception;
@@ -59,6 +60,7 @@ public class Participant extends GenericActor{
     @Override
     public Receive createReceive(){
         return receiveBuilder()
+                .match(ChangeView.class, this::onChangeView)
                 .match(AssignId.class, this::onAssignId)
                 .build();
     }

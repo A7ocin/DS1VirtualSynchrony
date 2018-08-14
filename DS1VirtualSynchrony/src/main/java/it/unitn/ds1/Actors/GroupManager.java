@@ -6,8 +6,10 @@ import akka.actor.ActorRef;
 
 // Local imports
 import it.unitn.ds1.Enums.ActorStatusType;
+import it.unitn.ds1.Views.View;
 import it.unitn.ds1.Messages.JoinRequest;
 import it.unitn.ds1.Messages.AssignId;
+import it.unitn.ds1.Messages.ChangeView;
 
 /**
  * Dedicated reliable group manager.
@@ -31,12 +33,32 @@ public class GroupManager extends GenericActor{
         return Props.create(GroupManager.class, () -> new GroupManager(id, remotePath));
     }
 
-    private void onJoinRequest(JoinRequest request){
-        ActorRef senderRef = getSender();
+    private int assignNewId(ActorRef senderRef){
         senderRef.tell(new AssignId(myId, participantId), getSelf());
         System.out.format("[%d] New join request from actor %d\n", myId, participantId);
-        participantId += 1;
-        this.status = ActorStatusType.WAITING;
+        return participantId ++;
+    }
+
+    private void requestNewView(int actorId, ActorRef actor){
+
+        View out;
+        if(this.vTemp == null){
+            out = this.v.buildNewView(actorId, actor);
+        }
+        else{
+            out = this.vTemp.buildNewView(actorId, actor);
+        }
+
+        //TODO: Now it's time to complete the view request
+
+    }
+
+    private void onJoinRequest(JoinRequest request){
+        setStatus(ActorStatusType.WAITING);
+        // Get sender of the join request and change its ID
+        ActorRef senderRef = getSender();
+        int newId = assignNewId(senderRef);
+        requestNewView(newId, senderRef);
     }
 
     /**
@@ -47,6 +69,7 @@ public class GroupManager extends GenericActor{
     @Override
     public Receive createReceive(){
         return receiveBuilder()
+                .match(ChangeView.class, this::onChangeView)
                 .match(JoinRequest.class, this::onJoinRequest)
                 .build();
     }
