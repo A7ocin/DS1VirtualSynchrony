@@ -28,7 +28,7 @@ public class View implements Serializable{
 
     public View buildNewView(int actorId, ActorRef actor){
 
-        View updatedView = this;
+        View updatedView = new View(this.viewId, this.participants);
 
         if(updatedView.participants.containsValue(actor)){
            updatedView.participants.values().removeIf(a -> a.equals(actor));

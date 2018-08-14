@@ -17,10 +17,13 @@ import it.unitn.ds1.Messages.ChangeView;
  * - It serialises group view changes
  * - It sends view update messages to the group
  * - Receives crash notification messages from participants
+ * - It can't crash
  */
 public class GroupManager extends GenericActor{
 
     private int participantId = 1;
+    private View vStart;
+
     /**
      * Group Manager constructor. Its ID will always be 0 by default.
      */
@@ -33,6 +36,20 @@ public class GroupManager extends GenericActor{
         return Props.create(GroupManager.class, () -> new GroupManager(id, remotePath));
     }
 
+    @Override
+    public void preStart(){
+        System.out.println("- Group manager is alive");
+        try{
+            super.preStart();
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
+        vStart = new View(0);
+        vStart = vStart.buildNewView(myId, getSelf());
+        installView(vStart);
+    }
+
     private int assignNewId(ActorRef senderRef){
         senderRef.tell(new AssignId(myId, participantId), getSelf());
         System.out.format("[%d] New join request from actor %d\n", myId, participantId);
@@ -41,6 +58,7 @@ public class GroupManager extends GenericActor{
 
     private void requestNewView(int actorId, ActorRef actor){
 
+        System.out.format("[%d] Requesting new view\n", myId);
         View out;
         if(this.vTemp == null){
             out = this.v.buildNewView(actorId, actor);

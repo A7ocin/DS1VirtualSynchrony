@@ -22,7 +22,7 @@ public abstract class GenericActor extends AbstractActor{
     protected int myId;             // Unique ID. Manager has a fixed ID = 0
     protected String remotePath;    // Remote TCP path for accessing a remote actor
     public ActorStatusType status;  // Current status of the actor
-    public View v, vTemp;           // Current and "to be confirmed" views
+    public View v, vTemp = null;    // Current and "to be confirmed" views
 
     /**
      * Generic Actor constructor.
@@ -68,6 +68,12 @@ public abstract class GenericActor extends AbstractActor{
             return false;
         }
         return false;
+    }
+
+    public void installView(View vNew){
+        // TODO: complete this method
+        this.v = new View(vNew.viewId, vNew.participants);
+        this.vTemp = null;
     }
 
 
