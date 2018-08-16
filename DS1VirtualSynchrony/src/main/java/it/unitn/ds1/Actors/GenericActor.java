@@ -143,8 +143,15 @@ public abstract class GenericActor extends AbstractActor{
             System.out.format("[%d] Sent new chat message %s to %d\n", myId, ts, participant.getKey());
             wait(1000);
         }
-        //wait(1000);
-        //sendChatMessage();
+
+        this.getContext().getSystem().scheduler().scheduleOnce(java.time.Duration.ofMillis(1000),
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        //getSelf().tell(m, getSelf());
+                        sendChatMessage();
+                    }
+                }, this.getContext().getSystem().dispatcher());
     }
 
     public void onChangeView(ChangeView request){
@@ -171,8 +178,6 @@ public abstract class GenericActor extends AbstractActor{
             return;
         }
         System.out.format("[%d] Received message %s from %d\n", myId, message.body, message.senderId);
-
-        sendChatMessage();
 
     }
 
