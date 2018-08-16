@@ -78,6 +78,18 @@ public abstract class GenericActor extends AbstractActor{
         return false;
     }
 
+    public void sendUnstableMessages(){
+
+        System.out.format("[%d] Sending unstable messages\n", myId);
+
+    }
+
+    public void sendFlushMessage(){
+
+        System.out.format("[%d] Sending flush message\n", myId);
+
+    }
+
     public void installView(View vNew){
         // TODO: complete this method
         this.v = vNew;
@@ -109,6 +121,12 @@ public abstract class GenericActor extends AbstractActor{
         }
         setStatus(ActorStatusType.WAITING);
         System.out.format("[%d] Actor %d requested a view change\n", myId, request.senderId);
+
+        sendUnstableMessages();
+
+        sendFlushMessage();
+
+        installView(request.v);
 
     }
 
