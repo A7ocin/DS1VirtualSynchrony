@@ -10,6 +10,7 @@ import it.unitn.ds1.Views.View;
 import it.unitn.ds1.Messages.JoinRequest;
 import it.unitn.ds1.Messages.AssignId;
 import it.unitn.ds1.Messages.ChangeView;
+import it.unitn.ds1.Messages.Message;
 
 /**
  * Dedicated reliable group manager.
@@ -68,7 +69,7 @@ public class GroupManager extends GenericActor{
         }
 
         this.vTemp = out;
-        sendMulticast(out);
+        sendMulticastChangeView(out);
 
         //TODO: Now it's time to complete the view request
 
@@ -92,6 +93,7 @@ public class GroupManager extends GenericActor{
         return receiveBuilder()
                 .match(ChangeView.class, this::onChangeView)
                 .match(JoinRequest.class, this::onJoinRequest)
+                .match(Message.class, this::onChatMessageReceived)
                 .build();
     }
 

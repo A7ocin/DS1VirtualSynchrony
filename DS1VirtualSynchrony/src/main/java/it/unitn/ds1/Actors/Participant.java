@@ -8,6 +8,7 @@ import akka.actor.ActorRef;
 import it.unitn.ds1.Messages.JoinRequest;
 import it.unitn.ds1.Messages.AssignId;
 import it.unitn.ds1.Messages.ChangeView;
+import it.unitn.ds1.Messages.Message;
 
 // Java imports
 import java.lang.Exception;
@@ -62,6 +63,7 @@ public class Participant extends GenericActor{
         return receiveBuilder()
                 .match(ChangeView.class, this::onChangeView)
                 .match(AssignId.class, this::onAssignId)
+                .match(Message.class, this::onChatMessageReceived)
                 .build();
     }
 

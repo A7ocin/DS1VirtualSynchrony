@@ -15,6 +15,10 @@ import it.unitn.ds1.Actors.GenericActor;
 import it.unitn.ds1.Actors.GroupManager;
 import it.unitn.ds1.Actors.Participant;
 
+// Java imports
+import java.net.Socket;
+import java.lang.Exception;
+
 
 /**
  * DS1 2018 final project: Virtual Synchrony
@@ -23,6 +27,20 @@ import it.unitn.ds1.Actors.Participant;
  */
 
 public class VSsystemClass{
+
+
+    private static boolean portAvailable(String host, int port) {
+        boolean result = false;
+        try {
+            (new Socket(host, port)).close();
+            result = true;
+        }
+        catch(Exception e) {
+            // Could not connect.
+        }
+
+        return result;
+    }
 
     /**
      * Entry point
@@ -49,6 +67,7 @@ public class VSsystemClass{
             actorType = ActorType.PARTICIPANT;
             String remote_ip = config.getString("nodeapp.remote_ip");
             int remote_port = config.getInt("nodeapp.remote_port");
+            String host = "akka.tcp://mysystem@"+remote_ip;
             // Starting with a bootstrapping node
             // The Akka path to the bootstrapping peer
             remotePath = "akka.tcp://mysystem@"+remote_ip+":"+remote_port+"/user/node";
