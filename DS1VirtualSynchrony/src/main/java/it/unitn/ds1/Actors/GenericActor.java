@@ -6,8 +6,15 @@ import akka.actor.ActorRef;
 
 // Local imports
 import it.unitn.ds1.Enums.ActorStatusType;
+import it.unitn.ds1.Enums.SendingStatusType;
 import it.unitn.ds1.Messages.ChangeView;
 import it.unitn.ds1.Views.View;
+
+// Java imports
+import java.util.HashMap;
+import java.lang.String;
+import java.lang.Exception;
+import java.util.Iterator;
 
 /**
  * Generic Akka Actor.
@@ -19,10 +26,11 @@ import it.unitn.ds1.Views.View;
  */
 public abstract class GenericActor extends AbstractActor{
 
-    protected int myId;             // Unique ID. Manager has a fixed ID = 0
-    protected String remotePath;    // Remote TCP path for accessing a remote actor
-    public ActorStatusType status;  // Current status of the actor
-    public View v, vTemp = null;    // Current and "to be confirmed" views
+    protected int myId;                     // Unique ID. Manager has a fixed ID = 0
+    protected String remotePath;            // Remote TCP path for accessing a remote actor
+    public ActorStatusType status;          // Current status of the actor
+    public SendingStatusType sendingStatus; // Current multicast sending status
+    public View v, vTemp = null;            // Current and "to be confirmed" views
 
     /**
      * Generic Actor constructor.
@@ -62,7 +70,7 @@ public abstract class GenericActor extends AbstractActor{
      */
     public boolean canInstallView(View newV){
         if(viewExists(newV)){
-            if(this.v.happensBefore(newV)){
+            if(this.v==null || this.v.happensBefore(newV)){
                 return true;
             }
             return false;
@@ -72,18 +80,35 @@ public abstract class GenericActor extends AbstractActor{
 
     public void installView(View vNew){
         // TODO: complete this method
-        this.v = new View(vNew.viewId, vNew.participants);
+        this.v = vNew;
         this.vTemp = null;
+        System.out.format("[%d] Installed view %d\n", myId, vNew.viewId);
+    }
+
+    public void sendMulticast(View v){
+        ChangeView cvm = new ChangeView(myId, v);
+        Iterator<HashMap.Entry<Integer, ActorRef>> it = v.participants.entrySet().iterator();
+        while (it.hasNext()) {
+            HashMap.Entry<Integer, ActorRef> participant = it.next();
+            participant.getValue().tell(cvm, getSelf());
+            System.out.format("[%d] Telling partecipant %d to change view to %d\n", myId, participant.getKey(), v.viewId);
+            try{
+                Thread.sleep(1000);
+            }
+            catch(Exception e){
+                System.out.println("SLEEP ERROR");
+            }
+        }
     }
 
 
     public void onChangeView(ChangeView request){
         if(isCrashed() || !canInstallView(request.v)){
-            System.out.format("[%d] Can't install new view", myId);
+            System.out.format("[%d] Can't install new view %d\n", myId, request.v.viewId);
             return;
         }
         setStatus(ActorStatusType.WAITING);
-        System.out.format("[%d] Actor %d requested a view change", myId, request.senderId);
+        System.out.format("[%d] Actor %d requested a view change\n", myId, request.senderId);
 
     }
 

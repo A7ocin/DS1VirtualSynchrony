@@ -53,7 +53,7 @@ public class GroupManager extends GenericActor{
     private int assignNewId(ActorRef senderRef){
         senderRef.tell(new AssignId(myId, participantId), getSelf());
         System.out.format("[%d] New join request from actor %d\n", myId, participantId);
-        return participantId ++;
+        return participantId++;
     }
 
     private void requestNewView(int actorId, ActorRef actor){
@@ -66,6 +66,9 @@ public class GroupManager extends GenericActor{
         else{
             out = this.vTemp.buildNewView(actorId, actor);
         }
+
+        this.vTemp = out;
+        sendMulticast(out);
 
         //TODO: Now it's time to complete the view request
 

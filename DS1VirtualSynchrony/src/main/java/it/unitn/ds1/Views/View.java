@@ -6,6 +6,7 @@ import akka.actor.ActorRef;
 // Java imports
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.Arrays;
 
 public class View implements Serializable{
 
@@ -28,18 +29,24 @@ public class View implements Serializable{
 
     public View buildNewView(int actorId, ActorRef actor){
 
-        View updatedView = new View(this.viewId, this.participants);
+        View updatedView = new View(this.viewId+1, this.participants);
+        //System.out.println(Arrays.asList(this.participants));
+        System.out.format("- Adding actor %d to view %d\n", actorId, updatedView.viewId);
 
         if(updatedView.participants.containsValue(actor)){
            updatedView.participants.values().removeIf(a -> a.equals(actor));
         }
         updatedView.participants.put(actorId, actor);
 
+        System.out.format("- New view has %d actors\n", updatedView.participants.size());
+        //System.out.println(Arrays.asList(updatedView.participants));
+
         return updatedView;
 
     }
 
     public boolean happensBefore(View newV){
+        //System.out.format("[%d %d]\n", this.viewId, newV.viewId);
         return this.viewId < newV.viewId;
     }
 
