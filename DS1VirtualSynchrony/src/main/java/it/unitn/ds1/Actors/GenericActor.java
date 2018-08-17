@@ -10,6 +10,7 @@ import it.unitn.ds1.Enums.SendingStatusType;
 import it.unitn.ds1.Messages.ChangeView;
 import it.unitn.ds1.Messages.Message;
 import it.unitn.ds1.Messages.Heartbeat;
+import it.unitn.ds1.Messages.CanSendHeartbeat;
 import it.unitn.ds1.Messages.CrashDetected;
 import it.unitn.ds1.Views.View;
 
@@ -41,9 +42,9 @@ public abstract class GenericActor extends AbstractActor{
     public ActorStatusType status;          // Current status of the actor
     public SendingStatusType sendingStatus; // Current multicast sending status
     public View v, vTemp = null;            // Current and "to be confirmed" views
-    private int Td = 2000;                  // Time threshold for message exchange
-    private int Ttimeout = 5000;            // Timeout for heartbeat receival
-    private HashMap<Integer, Instant> heartbeats = new HashMap<Integer, Instant>();
+    private int Td = 1000;                  // Time threshold for message exchange
+    public int Ttimeout = 5000;            // Timeout for heartbeat receival
+    public ActorRef manager;
 
     /**
      * Generic Actor constructor.
@@ -165,44 +166,50 @@ public abstract class GenericActor extends AbstractActor{
                 }, this.getContext().getSystem().dispatcher());
     }
 
-    public void sendHeartbeat(){
 
-        Heartbeat h = new Heartbeat(myId);
-        Iterator<HashMap.Entry<Integer, ActorRef>> it = v.participants.entrySet().iterator();
-        while (it.hasNext()) {
-            HashMap.Entry<Integer, ActorRef> participant = it.next();
-            if(participant.getKey() == this.myId){
-                continue;
-            }
-            participant.getValue().tell(h, getSelf());
-            //System.out.format("[%d] Sent heartbeat to %d\n", myId, participant.getKey());
-
-            // CRASH DETECTION
-            try {
-                Instant previous = heartbeats.get(participant.getKey());
-                long delta = Duration.between(previous, Instant.now()).toMillis();
-                if (delta > Ttimeout) {
-                    System.out.format("[%d] Process %d CRASHED!!! %d\n", myId, participant.getKey(), delta);
-                    ActorRef manager = v.participants.get(0);
-                    CrashDetected crash = new CrashDetected(this.myId, participant.getKey());
-                    manager.tell(crash, getSelf());
-                }
-            }
-            catch(Exception e){
-                // TODO
-            }
-
-            networkDelay();
-        }
-
-        this.getContext().getSystem().scheduler().scheduleOnce(java.time.Duration.ofMillis(1000),
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        sendHeartbeat();
-                    }
-                }, this.getContext().getSystem().dispatcher());
-    }
+//    public void sendHeartbeat(){
+//
+//        Heartbeat h = new Heartbeat(myId);
+//        ActorRef manager = v.participants.get(0);
+//        manager.tell(h, getSelf());
+//        networkDelay();
+//
+//        Heartbeat h = new Heartbeat(myId);
+//        Iterator<HashMap.Entry<Integer, ActorRef>> it = v.participants.entrySet().iterator();
+//        while (it.hasNext()) {
+//            HashMap.Entry<Integer, ActorRef> participant = it.next();
+//            if(participant.getKey() == this.myId){
+//                continue;
+//            }
+//            participant.getValue().tell(h, getSelf());
+//            //System.out.format("[%d] Sent heartbeat to %d\n", myId, participant.getKey());
+//
+//            // CRASH DETECTION
+//            try {
+//                Instant previous = heartbeats.get(participant.getKey());
+//                long delta = Duration.between(previous, Instant.now()).toMillis();
+//                if (delta > Ttimeout) {
+//                    System.out.format("[%d] Process %d CRASHED!!! %d\n", myId, participant.getKey(), delta);
+//                    ActorRef manager = v.participants.get(0);
+//                    CrashDetected crash = new CrashDetected(this.myId, participant.getKey());
+//                    manager.tell(crash, getSelf());
+//                }
+//            }
+//            catch(Exception e){
+//                // TODO
+//            }
+//
+//            networkDelay();
+//        }
+//
+//        this.getContext().getSystem().scheduler().scheduleOnce(java.time.Duration.ofMillis(1000),
+//                new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        sendHeartbeat();
+//                    }
+//                }, this.getContext().getSystem().dispatcher());
+//    }
 
     public void onChangeView(ChangeView request){
         if(isCrashed() || !canInstallView(request.v)){
@@ -218,7 +225,7 @@ public abstract class GenericActor extends AbstractActor{
 
         installView(request.v);
 
-        sendHeartbeat();
+        //sendHeartbeat();
 
         sendChatMessage();
 
@@ -233,15 +240,15 @@ public abstract class GenericActor extends AbstractActor{
 
     }
 
-    public void onHeartbeatReceived(Heartbeat heartbeat){
-
-        if(isCrashed()){
-            return;
-        }
-        //System.out.format("[%d] Received heartbeat from %d\n", myId, heartbeat.senderId);
-        heartbeats.put(heartbeat.senderId, heartbeat.getBeat());
-
-    }
+//    public void onHeartbeatReceived(Heartbeat heartbeat){
+//
+//        if(isCrashed()){
+//            return;
+//        }
+//        //System.out.format("[%d] Received heartbeat from %d\n", myId, heartbeat.senderId);
+//        heartbeats.put(heartbeat.senderId, heartbeat.getBeat());
+//
+//    }
 
 
 }

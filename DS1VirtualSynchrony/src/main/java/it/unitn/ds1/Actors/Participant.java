@@ -2,6 +2,7 @@ package it.unitn.ds1.Actors;
 
 // Akka imports
 import akka.actor.Props;
+import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 
 // Local imports
@@ -10,6 +11,7 @@ import it.unitn.ds1.Messages.AssignId;
 import it.unitn.ds1.Messages.ChangeView;
 import it.unitn.ds1.Messages.Message;
 import it.unitn.ds1.Messages.Heartbeat;
+import it.unitn.ds1.Messages.CanSendHeartbeat;
 
 // Java imports
 import java.lang.Exception;
@@ -21,6 +23,8 @@ import java.lang.Exception;
  */
 public class Participant extends GenericActor{
 
+
+    ActorRef manager;
 
     /**
      * Participant constructor. Its ID is assigned by the Group Manager
@@ -40,6 +44,27 @@ public class Participant extends GenericActor{
         myId = request.id;
 
         System.out.format("[%d] New id: %d\n", myId, myId);
+    }
+
+    public void onCanSendHeartbeat(CanSendHeartbeat message){
+        this.manager = message.manager;
+        sendHeartbeat();
+    }
+
+    public void sendHeartbeat(){
+        Heartbeat h = new Heartbeat(myId);
+        //System.out.format("[%d] MANAGER: %s\n", myId, manager);
+        //System.out.format("[%d] Sent heartbeat to %s\n", myId, manager);
+        manager.tell(h, getSelf());
+        //networkDelay();
+
+        this.getContext().getSystem().scheduler().scheduleOnce(java.time.Duration.ofMillis(1000),
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        sendHeartbeat();
+                    }
+                }, this.getContext().getSystem().dispatcher());
     }
 
     @Override
@@ -65,7 +90,7 @@ public class Participant extends GenericActor{
                 .match(ChangeView.class, this::onChangeView)
                 .match(AssignId.class, this::onAssignId)
                 .match(Message.class, this::onChatMessageReceived)
-                .match(Heartbeat.class, this::onHeartbeatReceived)
+                .match(CanSendHeartbeat.class, this::onCanSendHeartbeat)
                 .build();
     }
 

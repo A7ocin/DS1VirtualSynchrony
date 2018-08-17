@@ -29,7 +29,14 @@ public class View implements Serializable{
 
     public View buildNewView(int actorId, ActorRef actor){
 
-        View updatedView = new View(this.viewId+1, this.participants);
+        int viewNumber;
+        if(this.participants.size() == 0 || (this.participants.size() == 1 && this.participants.containsValue(actor))){
+            viewNumber =this.viewId;
+        }
+        else{
+            viewNumber =this.viewId+1;
+        }
+        View updatedView = new View(viewNumber, this.participants);
         //System.out.println(Arrays.asList(this.participants));
         System.out.format("- Adding actor %d to view %d\n", actorId, updatedView.viewId);
 
