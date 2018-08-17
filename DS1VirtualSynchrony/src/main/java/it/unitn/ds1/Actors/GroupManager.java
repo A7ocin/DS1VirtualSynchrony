@@ -11,6 +11,8 @@ import it.unitn.ds1.Messages.JoinRequest;
 import it.unitn.ds1.Messages.AssignId;
 import it.unitn.ds1.Messages.ChangeView;
 import it.unitn.ds1.Messages.Message;
+import it.unitn.ds1.Messages.Heartbeat;
+import it.unitn.ds1.Messages.CrashDetected;
 
 /**
  * Dedicated reliable group manager.
@@ -57,15 +59,23 @@ public class GroupManager extends GenericActor{
         return participantId++;
     }
 
-    private void requestNewView(int actorId, ActorRef actor){
+    private void requestNewView(int actorId, ActorRef actor, boolean add){
 
         System.out.format("[%d] Requesting new view\n", myId);
         View out;
-        if(this.vTemp == null){
-            out = this.v.buildNewView(actorId, actor);
+        if(add) {
+            if (this.vTemp == null) {
+                out = this.v.buildNewView(actorId, actor);
+            } else {
+                out = this.vTemp.buildNewView(actorId, actor);
+            }
         }
         else{
-            out = this.vTemp.buildNewView(actorId, actor);
+            if (this.vTemp == null) {
+                out = this.v.removeFromView(actorId);
+            } else {
+                out = this.vTemp.removeFromView(actorId);
+            }
         }
 
         this.vTemp = out;
@@ -80,7 +90,13 @@ public class GroupManager extends GenericActor{
         // Get sender of the join request and change its ID
         ActorRef senderRef = getSender();
         int newId = assignNewId(senderRef);
-        requestNewView(newId, senderRef);
+        requestNewView(newId, senderRef, true);
+    }
+
+    private void onCrashDetected(CrashDetected crash){
+        setStatus(ActorStatusType.WAITING);
+        ActorRef senderRef = getSender();
+        requestNewView(crash.crashedId, senderRef, false);
     }
 
     /**
@@ -94,6 +110,8 @@ public class GroupManager extends GenericActor{
                 .match(ChangeView.class, this::onChangeView)
                 .match(JoinRequest.class, this::onJoinRequest)
                 .match(Message.class, this::onChatMessageReceived)
+                .match(Heartbeat.class, this::onHeartbeatReceived)
+                .match(CrashDetected.class, this::onCrashDetected)
                 .build();
     }
 

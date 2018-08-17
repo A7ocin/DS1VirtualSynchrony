@@ -45,6 +45,21 @@ public class View implements Serializable{
 
     }
 
+    public View removeFromView(int actorId){
+
+        View updatedView = new View(this.viewId+1, this.participants);
+        //System.out.println(Arrays.asList(this.participants));
+        System.out.format("- Removing actor %d to view %d\n", actorId, updatedView.viewId);
+
+        updatedView.participants.remove(actorId);
+
+        System.out.format("- New view has %d actors\n", updatedView.participants.size());
+        //System.out.println(Arrays.asList(updatedView.participants));
+
+        return updatedView;
+
+    }
+
     public boolean happensBefore(View newV){
         //System.out.format("[%d %d]\n", this.viewId, newV.viewId);
         return this.viewId < newV.viewId;

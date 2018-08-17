@@ -9,6 +9,7 @@ import it.unitn.ds1.Messages.JoinRequest;
 import it.unitn.ds1.Messages.AssignId;
 import it.unitn.ds1.Messages.ChangeView;
 import it.unitn.ds1.Messages.Message;
+import it.unitn.ds1.Messages.Heartbeat;
 
 // Java imports
 import java.lang.Exception;
@@ -64,6 +65,7 @@ public class Participant extends GenericActor{
                 .match(ChangeView.class, this::onChangeView)
                 .match(AssignId.class, this::onAssignId)
                 .match(Message.class, this::onChatMessageReceived)
+                .match(Heartbeat.class, this::onHeartbeatReceived)
                 .build();
     }
 

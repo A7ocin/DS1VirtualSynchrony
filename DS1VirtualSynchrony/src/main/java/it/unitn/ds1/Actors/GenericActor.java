@@ -9,10 +9,13 @@ import it.unitn.ds1.Enums.ActorStatusType;
 import it.unitn.ds1.Enums.SendingStatusType;
 import it.unitn.ds1.Messages.ChangeView;
 import it.unitn.ds1.Messages.Message;
+import it.unitn.ds1.Messages.Heartbeat;
+import it.unitn.ds1.Messages.CrashDetected;
 import it.unitn.ds1.Views.View;
 
 // Java imports
 import java.util.HashMap;
+import java.util.Map;
 import java.lang.String;
 import java.lang.Exception;
 import java.util.Iterator;
@@ -20,6 +23,8 @@ import java.util.Date;
 import java.sql.Timestamp;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.Random;
+import java.time.*;
 
 /**
  * Generic Akka Actor.
@@ -36,6 +41,9 @@ public abstract class GenericActor extends AbstractActor{
     public ActorStatusType status;          // Current status of the actor
     public SendingStatusType sendingStatus; // Current multicast sending status
     public View v, vTemp = null;            // Current and "to be confirmed" views
+    private int Td = 2000;                  // Time threshold for message exchange
+    private int Ttimeout = 5000;            // Timeout for heartbeat receival
+    private HashMap<Integer, Instant> heartbeats = new HashMap<Integer, Instant>();
 
     /**
      * Generic Actor constructor.
@@ -110,7 +118,7 @@ public abstract class GenericActor extends AbstractActor{
             participant.getValue().tell(cvm, getSelf());
             System.out.format("[%d] Telling partecipant %d to change view to %d\n", myId, participant.getKey(), v.viewId);
             try{
-                Thread.sleep(1000);
+                networkDelay();
             }
             catch(Exception e){
                 System.out.println("SLEEP ERROR");
@@ -118,7 +126,10 @@ public abstract class GenericActor extends AbstractActor{
         }
     }
 
-    public void wait(int time){
+    public void networkDelay(){
+        Random r = new Random();
+        int min = 100;
+        int time = r.nextInt((Td - min) + 1) + min;
         try{
             Thread.sleep(time);
         }
@@ -141,7 +152,7 @@ public abstract class GenericActor extends AbstractActor{
             }
             participant.getValue().tell(m, getSelf());
             System.out.format("[%d] Sent new chat message %s to %d\n", myId, ts, participant.getKey());
-            wait(1000);
+            networkDelay();
         }
 
         this.getContext().getSystem().scheduler().scheduleOnce(java.time.Duration.ofMillis(1000),
@@ -150,6 +161,45 @@ public abstract class GenericActor extends AbstractActor{
                     public void run() {
                         //getSelf().tell(m, getSelf());
                         sendChatMessage();
+                    }
+                }, this.getContext().getSystem().dispatcher());
+    }
+
+    public void sendHeartbeat(){
+
+        Heartbeat h = new Heartbeat(myId);
+        Iterator<HashMap.Entry<Integer, ActorRef>> it = v.participants.entrySet().iterator();
+        while (it.hasNext()) {
+            HashMap.Entry<Integer, ActorRef> participant = it.next();
+            if(participant.getKey() == this.myId){
+                continue;
+            }
+            participant.getValue().tell(h, getSelf());
+            //System.out.format("[%d] Sent heartbeat to %d\n", myId, participant.getKey());
+
+            // CRASH DETECTION
+            try {
+                Instant previous = heartbeats.get(participant.getKey());
+                long delta = Duration.between(previous, Instant.now()).toMillis();
+                if (delta > Ttimeout) {
+                    System.out.format("[%d] Process %d CRASHED!!! %d\n", myId, participant.getKey(), delta);
+                    ActorRef manager = v.participants.get(0);
+                    CrashDetected crash = new CrashDetected(this.myId, participant.getKey());
+                    manager.tell(crash, getSelf());
+                }
+            }
+            catch(Exception e){
+                // TODO
+            }
+
+            networkDelay();
+        }
+
+        this.getContext().getSystem().scheduler().scheduleOnce(java.time.Duration.ofMillis(1000),
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        sendHeartbeat();
                     }
                 }, this.getContext().getSystem().dispatcher());
     }
@@ -168,6 +218,8 @@ public abstract class GenericActor extends AbstractActor{
 
         installView(request.v);
 
+        sendHeartbeat();
+
         sendChatMessage();
 
     }
@@ -180,5 +232,16 @@ public abstract class GenericActor extends AbstractActor{
         System.out.format("[%d] Received message %s from %d\n", myId, message.body, message.senderId);
 
     }
+
+    public void onHeartbeatReceived(Heartbeat heartbeat){
+
+        if(isCrashed()){
+            return;
+        }
+        //System.out.format("[%d] Received heartbeat from %d\n", myId, heartbeat.senderId);
+        heartbeats.put(heartbeat.senderId, heartbeat.getBeat());
+
+    }
+
 
 }
