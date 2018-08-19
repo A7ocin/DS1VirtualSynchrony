@@ -20,13 +20,34 @@ A view is nothing but a "list" of the processes part of the current group.
 
 Each time a process joins or leaves (either voluntarily or due to a crash) the group, all the participants **install** a new view and take care of the <u>unstable</u> messages.
 
-**Note**: message cannot cross epochs. This means that a message sent before a new view install must be delivered before the receiver installs the new view.
+**Note**: messages cannot cross epochs. This means that a message sent before a new view install must be delivered before the receiver installs the new view.
 
 ![](images/viewChange.png)
 
-//stable messages
+### 2.2 - Message stability
 
-//flush messages
+Multicast is implemented as a sequence of unicast messages and can fail only when the sender crashes before transmitting all the messages.
+
+To avoid related issues, each member of the group keeps a copy of the message until every process has it. When this happens, the message becomes **stable**.
+
+The sender announces the message stability by sending a second message to all the recipients.
+
+![](images/messageStability.png)
+
+In the image above, the red arrow signal the message stability.
+
+### 2.3 - Flush messages
+
+Before a view change, all the group participants must:
+
+1. **not** send new multicast messages;
+2. send all the <u>unstable</u> messages to all the other processes in the new view (the leavers and the entities crashed will not receive this message);
+3. send a **flush** message that signals the end of the transmission;
+4. once a process receives a flush message from **all** the others, it can install the new view and resume its normal functioning.
+
+![](images/flush.png)
+
+*In the fourth panel, the new view.*
 
 ##3 - Classes
 
@@ -42,8 +63,11 @@ Each time a process joins or leaves (either voluntarily or due to a crash) the g
 
 ###3.3 - Messages
 #####AssignId
+#####CanSendHeartbeat
 #####ChangeView
+#####CrashDetected
 #####GenericMessage
+#####Heartbeat
 #####JoinRequest
 #####Message
 
