@@ -1,6 +1,7 @@
 # Project report - Distributed Systems 1
 
-Authors: *Garau Nicola* and *Manfredi Salvatore* - A.Y. 2017 - 2018    
+A.Y. 2017 - 2018
+Authors: *Garau Nicola* and *Manfredi Salvatore*
 
 ## 1 - Introduction
 
@@ -10,7 +11,7 @@ A multicast (group communication) is reliable when each sent message is delivere
 
 The project has been implemented in Java using <u>Akka</u>, a toolkit designed for the creation of concurrent and distributed message-driven applications.
 
-##2 - Protocol
+## 2 - Protocol
 
 Virtual synchrony is a distributed algorithm whose functioning revolves around the concept of **view**. 
 
@@ -49,30 +50,30 @@ Before a view change, all the group participants must:
 
 *In the fourth panel, the new view.*
 
-##3 - Classes
+## 3 - Classes (WIP)
 
-###3.1 - Actors
-#####GenericActor
-#####GroupManager
-#####Participant
+### 3.1 - Actors
+##### GenericActor
+##### GroupManager
+##### Participant
 
-###3.2 - Enums
-#####ActorStatusType
-#####ActorType
-#####SendingStatusType
+### 3.2 - Enums
+##### ActorStatusType
+##### ActorType
+##### SendingStatusType
 
-###3.3 - Messages
-#####AssignId
-#####CanSendHeartbeat
-#####ChangeView
-#####CrashDetected
-#####GenericMessage
-#####Heartbeat
-#####JoinRequest
-#####Message
+### 3.3 - Messages
+##### AssignId
+##### CanSendHeartbeat
+##### ChangeView
+##### CrashDetected
+##### GenericMessage
+##### Heartbeat
+##### JoinRequest
+##### Message
 
-###3.4 - Views
-#####View
+### 3.4 - Views
+##### View
 
 [^roba]: robaccia
 
