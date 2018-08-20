@@ -43,7 +43,7 @@ public class Participant extends GenericActor{
         }
         myId = request.id;
 
-        System.out.format("[%d] New id: %d\n", myId, myId);
+        logger.info("["+myId+"] New id: "+myId);
     }
 
     public void onCanSendHeartbeat(CanSendHeartbeat message){
@@ -69,7 +69,7 @@ public class Participant extends GenericActor{
 
     @Override
     public void preStart(){
-        System.out.println("- New actor is asking to join");
+        logger.info("- New actor is asking to join");
         try{
             super.preStart();
         }
