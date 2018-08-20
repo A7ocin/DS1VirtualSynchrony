@@ -23,7 +23,7 @@ Each time a process joins or leaves (either voluntarily or due to a crash) the g
 
 **Note**: messages cannot cross epochs. This means that a message sent before a new view install must be delivered before the receiver installs the new view.
 
-![](images/viewChange.png)
+![](Docs/images/viewChange.png)
 
 ### 2.2 - Message stability
 
@@ -33,7 +33,7 @@ To avoid related issues, each member of the group keeps a copy of the message un
 
 The sender announces the message stability by sending a second message to all the recipients.
 
-![](images/messageStability.png)
+![](Docs/images/messageStability.png)
 
 In the image above, the red arrow signal the message stability.
 
@@ -46,7 +46,7 @@ Before a view change, all the group participants must:
 3. send a **flush** message that signals the end of the transmission;
 4. once a process receives a flush message from **all** the others, it can install the new view and resume its normal functioning.
 
-![](images/flush.png)
+![](Docs/images/flush.png)
 
 *In the fourth panel, the new view.*
 
