@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.Random;
 import java.util.HashSet;
 import java.time.*;
+import org.apache.log4j.Logger;
 
 /**
  * Generic Akka Actor.
@@ -48,6 +49,8 @@ public abstract class GenericActor extends AbstractActor{
     public ActorRef manager;
     private HashMap<Integer, Message> unstableMessages = new HashMap<Integer, Message>();
     private HashSet<String> delivered = new HashSet<String>();
+
+    public final static Logger logger = Logger.getLogger(GenericActor.class);
 
     /**
      * Generic Actor constructor.
@@ -97,7 +100,7 @@ public abstract class GenericActor extends AbstractActor{
 
     public void sendUnstableMessages(){
 
-        System.out.format("[%d] Sending unstable messages\n", myId);
+        logger.info("[" + myId + "] Sending unstable messages");
         Iterator<HashMap.Entry<Integer, Message>> itUnstable = unstableMessages.entrySet().iterator();
         while(itUnstable.hasNext()){
             HashMap.Entry<Integer, Message> um = itUnstable.next();
@@ -105,7 +108,7 @@ public abstract class GenericActor extends AbstractActor{
             while (it.hasNext()) {
                 HashMap.Entry<Integer, ActorRef> participant = it.next();
                 participant.getValue().tell(um.getValue(), getSelf());
-                System.out.format("[%d] Sending unstable message %s to partecipant %d\n", myId, um.getValue().body, participant.getKey());
+                logger.info("[" + myId + "] Sending unstable message " + um.getValue().body + " to partecipant " + participant.getKey());
                 try{
                     networkDelay();
                 }
@@ -119,7 +122,7 @@ public abstract class GenericActor extends AbstractActor{
 
     public void sendFlushMessage(){
 
-        System.out.format("[%d] Sending flush message\n", myId);
+        logger.info("[" + myId + "] Sending flush message");
 
     }
 
@@ -127,7 +130,7 @@ public abstract class GenericActor extends AbstractActor{
         // TODO: complete this method
         this.v = vNew;
         this.vTemp = null;
-        System.out.format("[%d] Installed view %d\n", myId, vNew.viewId);
+        logger.info("[" + myId + "] Installed view " + vNew.viewId);
     }
 
     public void sendMulticastChangeView(View v){
@@ -136,7 +139,7 @@ public abstract class GenericActor extends AbstractActor{
         while (it.hasNext()) {
             HashMap.Entry<Integer, ActorRef> participant = it.next();
             participant.getValue().tell(cvm, getSelf());
-            System.out.format("[%d] Telling partecipant %d to change view to %d\n", myId, participant.getKey(), v.viewId);
+            logger.info("["+myId+"] Telling partecipant "+participant.getKey()+" to change view to "+v.viewId);
             try{
                 networkDelay();
             }
@@ -171,7 +174,7 @@ public abstract class GenericActor extends AbstractActor{
                 continue;
             }
             participant.getValue().tell(m, getSelf());
-            System.out.format("[%d] Sent new chat message %s to %d\n", myId, ts, participant.getKey());
+            logger.info("["+myId+"] Sent new chat message "+ts+" to "+participant.getKey());
             networkDelay();
         }
 
@@ -187,11 +190,11 @@ public abstract class GenericActor extends AbstractActor{
 
     public void onChangeView(ChangeView request){
         if(isCrashed() || !canInstallView(request.v)){
-            System.out.format("[%d] Can't install new view %d\n", myId, request.v.viewId);
+            logger.warn("["+myId+"] Can't install new view "+request.v.viewId);
             return;
         }
         setStatus(ActorStatusType.WAITING);
-        System.out.format("[%d] Actor %d requested a view change\n", myId, request.senderId);
+        logger.info("["+myId+"] Actor "+request.senderId+" requested a view change");
 
         sendUnstableMessages();
 
@@ -215,7 +218,7 @@ public abstract class GenericActor extends AbstractActor{
         if(!delivered.contains(message.body)){
             unstableMessages.put(message.senderId, message);
             delivered.add(message.body);
-            System.out.format("[%d] Received message %s from %d\n", myId, message.body, message.senderId);
+            logger.info("["+myId+"] Received message "+message.body+" from "+message.senderId);
         }
 
     }

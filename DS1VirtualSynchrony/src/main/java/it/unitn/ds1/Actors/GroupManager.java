@@ -48,7 +48,7 @@ public class GroupManager extends GenericActor{
 
     @Override
     public void preStart(){
-        System.out.println("- Group manager is alive");
+        logger.info("- Group manager is alive");
         try{
             super.preStart();
         }
@@ -62,7 +62,7 @@ public class GroupManager extends GenericActor{
 
     private int assignNewId(ActorRef senderRef){
         senderRef.tell(new AssignId(myId, participantId), getSelf());
-        System.out.format("[%d] New join request from actor %d\n", myId, participantId);
+        logger.info("["+myId+"] New join request from actor "+participantId);
 
         senderRef.tell(new CanSendHeartbeat(this.myId, getSelf()), getSelf());
 
@@ -71,7 +71,7 @@ public class GroupManager extends GenericActor{
 
     private void requestNewView(int actorId, ActorRef actor, boolean add){
 
-        System.out.format("[%d] Requesting new view\n", myId);
+        logger.info("["+myId+"] Requesting new view");
         View out;
         if(add) {
             if (this.vTemp == null) {
@@ -81,7 +81,7 @@ public class GroupManager extends GenericActor{
             }
         }
         else{
-            System.out.format("[%d] Killing %d\n", myId, actorId);
+            logger.info("["+myId+"] Killing "+actorId);
             if (this.vTemp == null) {
                 out = this.v.removeFromView(actorId);
             } else {
@@ -117,7 +117,7 @@ public class GroupManager extends GenericActor{
             long delta = Duration.between(previous, Instant.now()).toMillis();
             //System.out.format("[%d] Delta: %d\n", myId, delta);
             if (delta > Ttimeout) {
-                System.out.format("[%d] Process %d CRASHED!!! %d\n", myId, heartbeat.senderId, delta);
+                logger.warn("["+myId+"] Process "+heartbeat.senderId+" CRASHED!!! "+delta);
                 CrashDetected crash = new CrashDetected(this.myId, heartbeat.senderId);
                 getSelf().tell(crash, getSelf());
             }
