@@ -44,7 +44,7 @@ public abstract class GenericActor extends AbstractActor{
     public SendingStatusType sendingStatus; // Current multicast sending status
     public View v, vTemp = null;            // Current and "to be confirmed" views
     private int Td = 1000;                  // Time threshold for message exchange
-    public int Ttimeout = 5000;            // Timeout for heartbeat receival
+    public int Ttimeout = 10000;            // Timeout for heartbeat receival
     public ActorRef manager;
     private HashMap<Integer, Message> unstableMessages = new HashMap<Integer, Message>();
     private HashSet<String> delivered = new HashSet<String>();
