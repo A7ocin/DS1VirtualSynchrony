@@ -10,6 +10,7 @@ import it.unitn.ds1.Enums.SendingStatusType;
 import it.unitn.ds1.Messages.ChangeView;
 import it.unitn.ds1.Messages.Message;
 import it.unitn.ds1.Messages.Heartbeat;
+import it.unitn.ds1.Messages.FlushMessage;
 import it.unitn.ds1.Messages.CanSendHeartbeat;
 import it.unitn.ds1.Messages.CrashDetected;
 import it.unitn.ds1.Views.View;
@@ -49,6 +50,7 @@ public abstract class GenericActor extends AbstractActor{
     public ActorRef manager;
     private HashMap<Integer, Message> unstableMessages = new HashMap<Integer, Message>();
     private HashSet<String> delivered = new HashSet<String>();
+    private HashSet<Integer> flushMessages = new HashSet<Integer>();
 
     public final static Logger logger = Logger.getLogger(GenericActor.class);
 
@@ -120,9 +122,19 @@ public abstract class GenericActor extends AbstractActor{
 
     }
 
-    public void sendFlushMessage(){
+    public void sendFlushMessage(View v){
 
-        logger.info("[" + myId + "] Sending flush message");
+        Iterator<HashMap.Entry<Integer, ActorRef>> it = v.participants.entrySet().iterator();
+        while (it.hasNext()) {
+            HashMap.Entry<Integer, ActorRef> participant = it.next();
+            participant.getValue().tell(new FlushMessage(this.myId), getSelf());
+            try{
+                networkDelay();
+            }
+            catch(Exception e){
+                System.out.println("SLEEP ERROR");
+            }
+        }
 
     }
 
@@ -177,6 +189,19 @@ public abstract class GenericActor extends AbstractActor{
     }
 
     public void onChangeView(ChangeView request){
+
+        if(flushMessages.size() < request.v.participants.size()){
+            logger.info("Waiting for all flushes");
+            this.getContext().getSystem().scheduler().scheduleOnce(java.time.Duration.ofMillis(1000),
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            //getSelf().tell(m, getSelf());
+                            onChangeView(request);
+                        }
+                    }, this.getContext().getSystem().dispatcher());
+        }
+
         if(isCrashed() || !canInstallView(request.v)){
             logger.warn("["+myId+"] Can't install new view "+request.v.viewId);
             return;
@@ -186,7 +211,7 @@ public abstract class GenericActor extends AbstractActor{
 
         sendUnstableMessages(request.v);
 
-        sendFlushMessage();
+        sendFlushMessage(request.v);
 
         installView(request.v);
 
@@ -208,6 +233,16 @@ public abstract class GenericActor extends AbstractActor{
             delivered.add(message.body);
             logger.info("["+myId+"] Received message "+message.body+" from "+message.senderId);
         }
+
+    }
+
+    public void onFlushMessageReceived(FlushMessage flush){
+
+        if(isCrashed()){
+            return;
+        }
+
+        flushMessages.add(flush.senderId);
 
     }
 

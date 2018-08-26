@@ -11,6 +11,7 @@ import it.unitn.ds1.Messages.AssignId;
 import it.unitn.ds1.Messages.ChangeView;
 import it.unitn.ds1.Messages.Message;
 import it.unitn.ds1.Messages.Heartbeat;
+import it.unitn.ds1.Messages.FlushMessage;
 import it.unitn.ds1.Messages.CanSendHeartbeat;
 
 // Java imports
@@ -91,6 +92,7 @@ public class Participant extends GenericActor{
                 .match(AssignId.class, this::onAssignId)
                 .match(Message.class, this::onChatMessageReceived)
                 .match(CanSendHeartbeat.class, this::onCanSendHeartbeat)
+                .match(FlushMessage.class, this::onFlushMessageReceived)
                 .build();
     }
 

@@ -13,6 +13,7 @@ import it.unitn.ds1.Messages.AssignId;
 import it.unitn.ds1.Messages.ChangeView;
 import it.unitn.ds1.Messages.Message;
 import it.unitn.ds1.Messages.Heartbeat;
+import it.unitn.ds1.Messages.FlushMessage;
 import it.unitn.ds1.Messages.CanSendHeartbeat;
 import it.unitn.ds1.Messages.CrashDetected;
 
@@ -170,6 +171,7 @@ public class GroupManager extends GenericActor{
                 .match(Message.class, this::onChatMessageReceived)
                 .match(Heartbeat.class, this::onHeartbeatReceived)
                 .match(CrashDetected.class, this::onCrashDetected)
+                .match(FlushMessage.class, this::onFlushMessageReceived)
                 .build();
     }
 
