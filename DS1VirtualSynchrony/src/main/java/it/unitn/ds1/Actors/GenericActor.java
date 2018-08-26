@@ -109,6 +109,9 @@ public abstract class GenericActor extends AbstractActor{
             Iterator<HashMap.Entry<Integer, ActorRef>> it = v.participants.entrySet().iterator();
             while (it.hasNext()) {
                 HashMap.Entry<Integer, ActorRef> participant = it.next();
+                if(participant.getKey() == myId){
+                    continue;
+                }
                 participant.getValue().tell(um.getValue(), getSelf());
                 logger.info("[" + myId + "] Sending unstable message " + um.getValue().body + " to partecipant " + participant.getKey());
             }
@@ -127,6 +130,9 @@ public abstract class GenericActor extends AbstractActor{
         Iterator<HashMap.Entry<Integer, ActorRef>> it = v.participants.entrySet().iterator();
         while (it.hasNext()) {
             HashMap.Entry<Integer, ActorRef> participant = it.next();
+            if(participant.getKey() == myId){
+                continue;
+            }
             participant.getValue().tell(new FlushMessage(this.myId), getSelf());
             try{
                 networkDelay();
@@ -190,7 +196,7 @@ public abstract class GenericActor extends AbstractActor{
 
     public void onChangeView(ChangeView request){
 
-        if(flushMessages.size() < request.v.participants.size()){
+        if(flushMessages.size() < request.v.participants.size()-1){
             logger.info("Waiting for all flushes");
             this.getContext().getSystem().scheduler().scheduleOnce(java.time.Duration.ofMillis(1000),
                     new Runnable() {
