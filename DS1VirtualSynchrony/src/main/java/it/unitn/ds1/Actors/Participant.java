@@ -58,7 +58,7 @@ public class Participant extends GenericActor{
         manager.tell(h, getSelf());
         //networkDelay();
 
-        this.getContext().getSystem().scheduler().scheduleOnce(java.time.Duration.ofMillis(1000),
+        this.getContext().getSystem().scheduler().scheduleOnce(java.time.Duration.ofMillis(500),
                 new Runnable() {
                     @Override
                     public void run() {

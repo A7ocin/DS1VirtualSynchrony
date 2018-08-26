@@ -19,6 +19,7 @@ import it.unitn.ds1.Messages.CrashDetected;
 // Java imports
 import java.util.HashMap;
 import java.time.*;
+import java.util.Iterator;
 
 /**
  * Dedicated reliable group manager.
@@ -67,6 +68,22 @@ public class GroupManager extends GenericActor{
         senderRef.tell(new CanSendHeartbeat(this.myId, getSelf()), getSelf());
 
         return participantId++;
+    }
+
+    public void sendMulticastChangeView(View v){
+        ChangeView cvm = new ChangeView(myId, v);
+        Iterator<HashMap.Entry<Integer, ActorRef>> it = v.participants.entrySet().iterator();
+        while (it.hasNext()) {
+            HashMap.Entry<Integer, ActorRef> participant = it.next();
+            participant.getValue().tell(cvm, getSelf());
+            logger.info("["+myId+"] Telling partecipant "+participant.getKey()+" to change view to "+v.viewId);
+            try{
+                networkDelay();
+            }
+            catch(Exception e){
+                System.out.println("SLEEP ERROR");
+            }
+        }
     }
 
     private void requestNewView(int actorId, ActorRef actor, boolean add){

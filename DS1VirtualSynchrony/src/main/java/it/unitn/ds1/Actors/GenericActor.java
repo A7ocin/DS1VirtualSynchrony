@@ -98,7 +98,7 @@ public abstract class GenericActor extends AbstractActor{
         return false;
     }
 
-    public void sendUnstableMessages(){
+    public void sendUnstableMessages(View v){
 
         logger.info("[" + myId + "] Sending unstable messages");
         Iterator<HashMap.Entry<Integer, Message>> itUnstable = unstableMessages.entrySet().iterator();
@@ -109,12 +109,12 @@ public abstract class GenericActor extends AbstractActor{
                 HashMap.Entry<Integer, ActorRef> participant = it.next();
                 participant.getValue().tell(um.getValue(), getSelf());
                 logger.info("[" + myId + "] Sending unstable message " + um.getValue().body + " to partecipant " + participant.getKey());
-                try{
-                    networkDelay();
-                }
-                catch(Exception e){
-                    System.out.println("SLEEP ERROR");
-                }
+            }
+            try{
+                networkDelay();
+            }
+            catch(Exception e){
+                System.out.println("SLEEP ERROR");
             }
         }
 
@@ -131,22 +131,7 @@ public abstract class GenericActor extends AbstractActor{
         this.v = vNew;
         this.vTemp = null;
         logger.info("[" + myId + "] Installed view " + vNew.viewId);
-    }
-
-    public void sendMulticastChangeView(View v){
-        ChangeView cvm = new ChangeView(myId, v);
-        Iterator<HashMap.Entry<Integer, ActorRef>> it = v.participants.entrySet().iterator();
-        while (it.hasNext()) {
-            HashMap.Entry<Integer, ActorRef> participant = it.next();
-            participant.getValue().tell(cvm, getSelf());
-            logger.info("["+myId+"] Telling partecipant "+participant.getKey()+" to change view to "+v.viewId);
-            try{
-                networkDelay();
-            }
-            catch(Exception e){
-                System.out.println("SLEEP ERROR");
-            }
-        }
+        this.setStatus(ActorStatusType.STARTED);
     }
 
     public void networkDelay(){
@@ -162,6 +147,9 @@ public abstract class GenericActor extends AbstractActor{
     }
 
     public void sendChatMessage() {
+        if(this.status == ActorStatusType.WAITING){
+            return;
+        }
         Date date = new Date();
         long time = date.getTime();
         String ts = "[" + this.myId + "] " + new Timestamp(time).toString();
@@ -196,7 +184,7 @@ public abstract class GenericActor extends AbstractActor{
         setStatus(ActorStatusType.WAITING);
         logger.info("["+myId+"] Actor "+request.senderId+" requested a view change");
 
-        sendUnstableMessages();
+        sendUnstableMessages(request.v);
 
         sendFlushMessage();
 
