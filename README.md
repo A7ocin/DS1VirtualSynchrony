@@ -82,7 +82,7 @@ Enums are classes that group together actors'attributes.
 
 There are three classes.
 
-####ActorStatusType
+#### ActorStatusType
 
 Identifies the status of each actor. It can be:
 
@@ -92,7 +92,7 @@ Identifies the status of each actor. It can be:
 
    - CRASHED;
 
-####ActorType
+#### ActorType
 
 Describes the type of the actor. It can either be:
 
@@ -100,7 +100,7 @@ Describes the type of the actor. It can either be:
 
    - PARTICIPANT;
 
-####SendingStatusType
+#### SendingStatusType
 
 Signals the <u>sending</u> status of the actor. It can be:
 
