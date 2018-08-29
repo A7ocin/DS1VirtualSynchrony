@@ -148,7 +148,9 @@ public abstract class GenericActor extends AbstractActor{
         // TODO: complete this method
         this.v = vNew;
         this.vTemp = null;
-        logger.info("[" + myId + "] Installed view " + vNew.viewId);
+        if(this.v.viewId != vNew.viewId) {
+            logger.info("[" + myId + "] Installed view " + vNew.viewId);
+        }
         this.setStatus(ActorStatusType.STARTED);
     }
 
@@ -196,20 +198,9 @@ public abstract class GenericActor extends AbstractActor{
 
     public void onChangeView(ChangeView request){
 
-        if(flushMessages.size() < request.v.participants.size()-1){
-            logger.info("Waiting for all flushes");
-            this.getContext().getSystem().scheduler().scheduleOnce(java.time.Duration.ofMillis(1000),
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            //getSelf().tell(m, getSelf());
-                            onChangeView(request);
-                        }
-                    }, this.getContext().getSystem().dispatcher());
-        }
-
         if(isCrashed() || !canInstallView(request.v)){
             logger.warn("["+myId+"] Can't install new view "+request.v.viewId);
+            // THIS RETURN COULD BE PROBLEMATIC
             return;
         }
         setStatus(ActorStatusType.WAITING);
@@ -218,6 +209,18 @@ public abstract class GenericActor extends AbstractActor{
         sendUnstableMessages(request.v);
 
         sendFlushMessage(request.v);
+
+        if(flushMessages.size() < request.v.participants.size()-1){
+            logger.info("Waiting for all flushes" + flushMessages.size() + " " + (request.v.participants.size()-1) );
+            this.getContext().getSystem().scheduler().scheduleOnce(java.time.Duration.ofMillis(1000),
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            getSelf().tell(new ChangeView(myId, request.v), getSelf());
+                            //onChangeView(request);
+                        }
+                    }, this.getContext().getSystem().dispatcher());
+        }
 
         installView(request.v);
 
