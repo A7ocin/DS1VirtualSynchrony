@@ -77,7 +77,7 @@ public class GroupManager extends GenericActor{
         while (it.hasNext()) {
             HashMap.Entry<Integer, ActorRef> participant = it.next();
             participant.getValue().tell(cvm, getSelf());
-            logger.info("["+myId+"] Telling partecipant "+participant.getKey()+" to change view to "+v.viewId);
+            logger.info("["+myId+"] Telling participant "+participant.getKey()+" to install view n."+v.viewId);
             try{
                 networkDelay();
             }

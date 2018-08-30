@@ -47,7 +47,10 @@ public class View implements Serializable{
         }
         updatedView.participants.put(actorId, actor);
 
-        logger.info("- New view has "+updatedView.participants.size()+" actors");
+        if(updatedView.participants.size()>1)
+            logger.info("- New view has "+updatedView.participants.size()+" actors");
+        else
+            logger.info("- New view has "+updatedView.participants.size()+" actor");
         //System.out.println(Arrays.asList(updatedView.participants));
 
         return updatedView;
@@ -58,11 +61,14 @@ public class View implements Serializable{
 
         View updatedView = new View(this.viewId+1, this.participants);
         //System.out.println(Arrays.asList(this.participants));
-        logger.info("- Removing actor "+actorId+" to view "+updatedView.viewId);
+        logger.info("- Removing actor "+actorId+" from view "+updatedView.viewId);
 
         updatedView.participants.remove(actorId);
 
-        logger.info("- New view has "+updatedView.participants.size()+" actors");
+        if(updatedView.participants.size()>1)
+            logger.info("- New view has "+updatedView.participants.size()+" actors");
+        else
+            logger.info("- New view has "+updatedView.participants.size()+" actor");
         //System.out.println(Arrays.asList(updatedView.participants));
 
         return updatedView;

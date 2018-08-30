@@ -113,7 +113,7 @@ public abstract class GenericActor extends AbstractActor{
                     continue;
                 }
                 participant.getValue().tell(um.getValue(), getSelf());
-                logger.info("[" + myId + "] Sending unstable message " + um.getValue().body + " to partecipant " + participant.getKey());
+                logger.info("[" + myId + "] Sending unstable message " + um.getValue().body + " to participant " + participant.getKey());
             }
             try{
                 networkDelay();
@@ -146,11 +146,12 @@ public abstract class GenericActor extends AbstractActor{
 
     public void installView(View vNew){
         // TODO: complete this method
-        this.v = vNew;
-        this.vTemp = null;
         if(this.v.viewId != vNew.viewId) {
             logger.info("[" + myId + "] Installed view " + vNew.viewId);
+            //System.out.println(myId+" install view "+vNew.viewId+" <participant list>"); LOGGING (needed: comma-separated participants ID)
         }
+        this.v = vNew;
+        this.vTemp = null;
         this.setStatus(ActorStatusType.STARTED);
     }
 
@@ -183,6 +184,7 @@ public abstract class GenericActor extends AbstractActor{
             }
             participant.getValue().tell(m, getSelf());
             logger.info("["+myId+"] Sent new chat message "+ts+" to "+participant.getKey());
+            //System.out.println(myId+" send multicast <seqnumber> within "+v); LOGGING (needed: sequenceNumber)
             networkDelay();
         }
 
@@ -199,7 +201,7 @@ public abstract class GenericActor extends AbstractActor{
     public void onChangeView(ChangeView request){
 
         if(isCrashed() || !canInstallView(request.v)){
-            logger.warn("["+myId+"] Can't install new view "+request.v.viewId);
+            logger.warn("["+myId+"] Cannot install new view "+request.v.viewId);
             // THIS RETURN COULD BE PROBLEMATIC
             return;
         }
@@ -241,6 +243,7 @@ public abstract class GenericActor extends AbstractActor{
             unstableMessages.put(message.senderId, message);
             delivered.add(message.body);
             logger.info("["+myId+"] Received message "+message.body+" from "+message.senderId);
+            //System.out.println(myId+" deliver multicast <seqnumber> from "+message.senderId+" within "+v); LOGGING (needed: sequenceNumber)
         }
 
     }
