@@ -77,7 +77,7 @@ public class GroupManager extends GenericActor{
         while (it.hasNext()) {
             HashMap.Entry<Integer, ActorRef> participant = it.next();
             participant.getValue().tell(cvm, getSelf());
-            logger.info("["+myId+"] Telling participant "+participant.getKey()+" to install view n."+v.viewId);
+            //logger.info("["+myId+"] Telling participant "+participant.getKey()+" to install view n."+v.viewId);
             try{
                 networkDelay();
             }
@@ -135,16 +135,16 @@ public class GroupManager extends GenericActor{
         try {
             Instant previous = heartbeats.get(heartbeat.senderId);
             long delta = Duration.between(previous, Instant.now()).toMillis();
-            System.out.format("[%d] Delta: %d\n", myId, delta);
+            //System.out.format("[%d] Delta: %d\n", myId, delta);
             if (delta > Ttimeout) {
-                logger.warn("["+myId+"] Process "+heartbeat.senderId+" CRASHED!!! "+delta);
+                //logger.warn("["+myId+"] Process "+heartbeat.senderId+" CRASHED!!! "+delta);
                 CrashDetected crash = new CrashDetected(this.myId, heartbeat.senderId);
                 getSelf().tell(crash, getSelf());
             }
         }
         catch(Exception e){
             // TODO
-            logger.warn("-----------------------");
+            //logger.warn("-----------------------");
         }
     }
 
@@ -152,7 +152,7 @@ public class GroupManager extends GenericActor{
 
         setStatus(ActorStatusType.STARTED);
         heartbeats.put(heartbeat.senderId, heartbeat.getBeat());
-        System.out.format("[%d] Received heartbeat from %d\n", myId, heartbeat.senderId);
+        //System.out.format("[%d] Received heartbeat from %d\n", myId, heartbeat.senderId);
         this.getContext().getSystem().scheduler().scheduleOnce(java.time.Duration.ofMillis(Ttimeout+1),
                 new Runnable() {
                     @Override

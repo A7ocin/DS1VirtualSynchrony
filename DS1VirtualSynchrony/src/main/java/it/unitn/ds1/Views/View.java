@@ -40,7 +40,7 @@ public class View implements Serializable{
         }
         View updatedView = new View(viewNumber, this.participants);
         //System.out.println(Arrays.asList(this.participants));
-        logger.info("- Adding actor "+actorId+" to view "+updatedView.viewId);
+        //logger.info("- Adding actor "+actorId+" to view "+updatedView.viewId);
 
         if(updatedView.participants.containsValue(actor)){
            updatedView.participants.values().removeIf(a -> a.equals(actor));

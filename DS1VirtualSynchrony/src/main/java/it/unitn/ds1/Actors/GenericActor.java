@@ -59,7 +59,7 @@ public abstract class GenericActor extends AbstractActor{
 
     @Override
     public void preStart(){
-        logger.info("- My id is " + this.myId);
+        //logger.info("- My id is " + this.myId);
     }
 
     public final static Logger logger = Logger.getLogger(GenericActor.class);
@@ -158,7 +158,7 @@ public abstract class GenericActor extends AbstractActor{
         if (this.myId!=0 && status == ActorStatusType.STARTED) {
             Heartbeat h = new Heartbeat(myId);
             //System.out.format("[%d] MANAGER: %s\n", myId, manager);
-            System.out.format("[%d] Sent heartbeat to %s\n", myId, manager);
+            //System.out.format("[%d] Sent heartbeat to %s\n", myId, manager);
             manager.tell(h, getSelf());
             //networkDelay();
 
@@ -230,12 +230,12 @@ public abstract class GenericActor extends AbstractActor{
     public void onChangeView(ChangeView request){
 
         if(isCrashed() || !canInstallView(request.v)){
-            logger.warn("["+myId+"] Cannot install new view "+request.v.viewId);
+            //logger.warn("["+myId+"] Cannot install new view "+request.v.viewId);
             // THIS RETURN COULD BE PROBLEMATIC
             return;
         }
         setStatus(ActorStatusType.WAITING);
-        logger.info("["+myId+"] Actor "+request.senderId+" requested a view change");
+        //logger.info("["+myId+"] Actor "+request.senderId+" requested a view change");
 
         sendUnstableMessages(request.v);
 

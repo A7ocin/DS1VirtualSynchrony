@@ -42,7 +42,7 @@ public class Participant extends GenericActor{
         //setStatus(ActorStatusType.STARTED);
         this.myId = request.id;
 
-        logger.info("["+myId+"] New id: "+myId);
+        //logger.info("["+myId+"] New id: "+myId);
     }
 
     public void onCanSendHeartbeat(CanSendHeartbeat message){
@@ -58,10 +58,10 @@ public class Participant extends GenericActor{
                 this.myId = -1;
                 super.preStart();
             } catch (Exception e) {
-                logger.info("- Can't do prestart");
+                //logger.info("- Can't do prestart");
                 e.printStackTrace();
             }
-            logger.info("- New actor " + this.myId + " is asking to join");
+            //logger.info("- New actor " + this.myId + " is asking to join");
             getContext().actorSelection(this.remotePath).tell(new JoinRequest(this.myId), getSelf());
         }
     }
