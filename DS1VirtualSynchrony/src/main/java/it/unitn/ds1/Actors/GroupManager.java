@@ -50,7 +50,7 @@ public class GroupManager extends GenericActor{
 
     @Override
     public void preStart(){
-        logger.info("- Group manager is alive");
+        //logger.info("- Group manager is alive");
         try{
             super.preStart();
         }
@@ -64,7 +64,7 @@ public class GroupManager extends GenericActor{
 
     private int assignNewId(ActorRef senderRef){
         senderRef.tell(new AssignId(myId, participantId), getSelf());
-        logger.info("["+myId+"] New join request from actor "+participantId);
+        //logger.info("["+myId+"] New join request from actor "+participantId);
 
         senderRef.tell(new CanSendHeartbeat(this.myId, getSelf()), getSelf());
 
@@ -89,7 +89,7 @@ public class GroupManager extends GenericActor{
 
     private void requestNewView(int actorId, ActorRef actor, boolean add){
 
-        logger.info("["+myId+"] Requesting new view");
+        //logger.info("["+myId+"] Requesting new view");
         View out;
         if(add) {
             if (this.vTemp == null) {
@@ -99,7 +99,7 @@ public class GroupManager extends GenericActor{
             }
         }
         else{
-            logger.info("["+myId+"] Killing "+actorId);
+            //logger.info("["+myId+"] Killing "+actorId);
             if (this.vTemp == null) {
                 out = this.v.removeFromView(actorId);
             } else {
@@ -115,11 +115,13 @@ public class GroupManager extends GenericActor{
     }
 
     private void onJoinRequest(JoinRequest request){
-        setStatus(ActorStatusType.WAITING);
-        // Get sender of the join request and change its ID
-        ActorRef senderRef = getSender();
-        int newId = assignNewId(senderRef);
-        requestNewView(newId, senderRef, true);
+        if(request.senderId == -1) {
+            setStatus(ActorStatusType.WAITING);
+            // Get sender of the join request and change its ID
+            ActorRef senderRef = getSender();
+            int newId = assignNewId(senderRef);
+            requestNewView(newId, senderRef, true);
+        }
     }
 
     private void onCrashDetected(CrashDetected crash){
@@ -133,7 +135,7 @@ public class GroupManager extends GenericActor{
         try {
             Instant previous = heartbeats.get(heartbeat.senderId);
             long delta = Duration.between(previous, Instant.now()).toMillis();
-            //System.out.format("[%d] Delta: %d\n", myId, delta);
+            System.out.format("[%d] Delta: %d\n", myId, delta);
             if (delta > Ttimeout) {
                 logger.warn("["+myId+"] Process "+heartbeat.senderId+" CRASHED!!! "+delta);
                 CrashDetected crash = new CrashDetected(this.myId, heartbeat.senderId);
@@ -142,13 +144,15 @@ public class GroupManager extends GenericActor{
         }
         catch(Exception e){
             // TODO
+            logger.warn("-----------------------");
         }
     }
 
     private void onHeartbeatReceived(Heartbeat heartbeat){
 
+        setStatus(ActorStatusType.STARTED);
         heartbeats.put(heartbeat.senderId, heartbeat.getBeat());
-        //System.out.format("[%d] Received heartbeat from %d\n", myId, heartbeat.senderId);
+        System.out.format("[%d] Received heartbeat from %d\n", myId, heartbeat.senderId);
         this.getContext().getSystem().scheduler().scheduleOnce(java.time.Duration.ofMillis(Ttimeout+1),
                 new Runnable() {
                     @Override
@@ -156,6 +160,10 @@ public class GroupManager extends GenericActor{
                         checkIfCrashed(heartbeat);
                     }
                 }, this.getContext().getSystem().dispatcher());
+    }
+
+    public void onCanSendHeartbeat(CanSendHeartbeat message){
+
     }
 
     /**
@@ -172,6 +180,7 @@ public class GroupManager extends GenericActor{
                 .match(Heartbeat.class, this::onHeartbeatReceived)
                 .match(CrashDetected.class, this::onCrashDetected)
                 .match(FlushMessage.class, this::onFlushMessageReceived)
+                .match(CanSendHeartbeat.class, this::onCanSendHeartbeat)
                 .build();
     }
 

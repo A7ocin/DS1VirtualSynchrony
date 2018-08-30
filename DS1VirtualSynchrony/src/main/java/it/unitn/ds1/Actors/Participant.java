@@ -13,6 +13,7 @@ import it.unitn.ds1.Messages.Message;
 import it.unitn.ds1.Messages.Heartbeat;
 import it.unitn.ds1.Messages.FlushMessage;
 import it.unitn.ds1.Messages.CanSendHeartbeat;
+import it.unitn.ds1.Enums.ActorStatusType;
 
 // Java imports
 import java.lang.Exception;
@@ -25,7 +26,6 @@ import java.lang.Exception;
 public class Participant extends GenericActor{
 
 
-    ActorRef manager;
 
     /**
      * Participant constructor. Its ID is assigned by the Group Manager
@@ -39,10 +39,8 @@ public class Participant extends GenericActor{
     }
 
     public void onAssignId(AssignId request){
-        if(isCrashed()){
-            return;
-        }
-        myId = request.id;
+        //setStatus(ActorStatusType.STARTED);
+        this.myId = request.id;
 
         logger.info("["+myId+"] New id: "+myId);
     }
@@ -52,32 +50,20 @@ public class Participant extends GenericActor{
         sendHeartbeat();
     }
 
-    public void sendHeartbeat(){
-        Heartbeat h = new Heartbeat(myId);
-        //System.out.format("[%d] MANAGER: %s\n", myId, manager);
-        //System.out.format("[%d] Sent heartbeat to %s\n", myId, manager);
-        manager.tell(h, getSelf());
-        //networkDelay();
-
-        this.getContext().getSystem().scheduler().scheduleOnce(java.time.Duration.ofMillis(500),
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        sendHeartbeat();
-                    }
-                }, this.getContext().getSystem().dispatcher());
-    }
-
     @Override
     public void preStart(){
-        logger.info("- New actor is asking to join");
-        try{
-            super.preStart();
+        if(this.myId==-1) {
+            //setStatus(ActorStatusType.WAITING);
+            try {
+                this.myId = -1;
+                super.preStart();
+            } catch (Exception e) {
+                logger.info("- Can't do prestart");
+                e.printStackTrace();
+            }
+            logger.info("- New actor " + this.myId + " is asking to join");
+            getContext().actorSelection(this.remotePath).tell(new JoinRequest(this.myId), getSelf());
         }
-        catch (Exception e){
-            e.printStackTrace();
-        }
-        getContext().actorSelection(this.remotePath).tell(new JoinRequest(this.myId), getSelf());
     }
 
     /**

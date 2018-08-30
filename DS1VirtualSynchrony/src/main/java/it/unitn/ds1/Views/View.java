@@ -19,11 +19,11 @@ public class View implements Serializable{
 
         this.viewId = viewId;
         if(newParticipants.length == 0){
-            logger.info("\n- Creating a new view "+viewId);
+            //logger.info("\n- Creating a new view "+viewId);
             this.participants = new HashMap<>();
         }
         else{
-            logger.info("- Updating view "+viewId);
+            //logger.info("- Updating view "+viewId);
             this.participants = new HashMap<Integer, ActorRef>(newParticipants[0]);
         }
 
@@ -47,10 +47,10 @@ public class View implements Serializable{
         }
         updatedView.participants.put(actorId, actor);
 
-        if(updatedView.participants.size()>1)
-            logger.info("- New view has "+updatedView.participants.size()+" actors");
-        else
-            logger.info("- New view has "+updatedView.participants.size()+" actor");
+        //if(updatedView.participants.size()>1)
+            //logger.info("- New view has "+updatedView.participants.size()+" actors");
+        //else
+            //logger.info("- New view has "+updatedView.participants.size()+" actor");
         //System.out.println(Arrays.asList(updatedView.participants));
 
         return updatedView;
@@ -61,14 +61,14 @@ public class View implements Serializable{
 
         View updatedView = new View(this.viewId+1, this.participants);
         //System.out.println(Arrays.asList(this.participants));
-        logger.info("- Removing actor "+actorId+" from view "+updatedView.viewId);
+        //logger.info("- Removing actor "+actorId+" from view "+updatedView.viewId);
 
         updatedView.participants.remove(actorId);
 
-        if(updatedView.participants.size()>1)
-            logger.info("- New view has "+updatedView.participants.size()+" actors");
-        else
-            logger.info("- New view has "+updatedView.participants.size()+" actor");
+        //if(updatedView.participants.size()>1)
+            //logger.info("- New view has "+updatedView.participants.size()+" actors");
+        //else
+            //logger.info("- New view has "+updatedView.participants.size()+" actor");
         //System.out.println(Arrays.asList(updatedView.participants));
 
         return updatedView;

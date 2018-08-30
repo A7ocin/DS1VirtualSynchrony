@@ -65,7 +65,7 @@ public class VSsystemClass{
         String remotePath = null;
 
         if (config.hasPath("nodeapp.remote_ip")) {
-            logger.info("- Node is PARTICIPANT");
+            //logger.info("- Node is PARTICIPANT");
             actorType = ActorType.PARTICIPANT;
             String remote_ip = config.getString("nodeapp.remote_ip");
             int remote_port = config.getInt("nodeapp.remote_port");
@@ -73,39 +73,39 @@ public class VSsystemClass{
             // Starting with a bootstrapping node
             // The Akka path to the bootstrapping peer
             remotePath = "akka.tcp://mysystem@"+remote_ip+":"+remote_port+"/user/node";
-            logger.info("Starting participant node; bootstrapping node: " + remote_ip + ":"+ remote_port);
+            //logger.info("Starting participant node; bootstrapping node: " + remote_ip + ":"+ remote_port);
         }
         else {
-            logger.info("- Node is MANAGER");
+            //logger.info("- Node is MANAGER");
             actorType = ActorType.MANAGER;
-            logger.info("- Starting manager node, id=" + myId);
+            //logger.info("- Starting manager node, id=" + myId);
         }
         // Create the actor system
-        logger.info("- Creating actor system...");
+        //logger.info("- Creating actor system...");
         final ActorSystem system = ActorSystem.create("mysystem", config);
-        logger.info("- Actor system created");
+        //logger.info("- Actor system created");
 
         switch(actorType){
             case PARTICIPANT:
                 // Create a participant node actor
-                logger.info("- Creating PARTICIPANT node...");
+                //logger.info("- Creating PARTICIPANT node...");
                 final ActorRef receiverParticipant = system.actorOf(
                         Participant.props(remotePath),
                         "node"      // actor name
                 );
-                logger.info("- PARTICIPANT node created");
+                //logger.info("- PARTICIPANT node created");
                 break;
             case MANAGER:
                 // Create a master node actor
-                logger.info("- Creating MANAGER node...");
+                //logger.info("- Creating MANAGER node...");
                 final ActorRef receiverManager = system.actorOf(
                         GroupManager.props(myId, remotePath),
                         "node"      // actor name
                 );
-                logger.info("- MANAGER node created");
+                //logger.info("- MANAGER node created");
                 break;
             default:
-                logger.info("Wrong actor type!");
+                //logger.info("Wrong actor type!");
                 break;
         }
     }

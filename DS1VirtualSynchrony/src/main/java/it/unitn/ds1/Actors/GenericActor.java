@@ -3,6 +3,10 @@ package it.unitn.ds1.Actors;
 // Akka imports
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
+import akka.actor.Props;
+import akka.actor.ActorSystem;
+import scala.concurrent.Await;
+import akka.util.Timeout;
 
 // Local imports
 import it.unitn.ds1.Enums.ActorStatusType;
@@ -40,7 +44,7 @@ import org.apache.log4j.Logger;
  */
 public abstract class GenericActor extends AbstractActor{
 
-    protected int myId;                     // Unique ID. Manager has a fixed ID = 0
+    protected int myId = -1;                // Unique ID. Manager has a fixed ID = 0
     protected String remotePath;            // Remote TCP path for accessing a remote actor
     public ActorStatusType status;          // Current status of the actor
     public SendingStatusType sendingStatus; // Current multicast sending status
@@ -51,6 +55,12 @@ public abstract class GenericActor extends AbstractActor{
     private HashMap<Integer, Message> unstableMessages = new HashMap<Integer, Message>();
     private HashSet<String> delivered = new HashSet<String>();
     private HashSet<Integer> flushMessages = new HashSet<Integer>();
+    public int messageCounter = 0;
+
+    @Override
+    public void preStart(){
+        logger.info("- My id is " + this.myId);
+    }
 
     public final static Logger logger = Logger.getLogger(GenericActor.class);
 
@@ -61,7 +71,7 @@ public abstract class GenericActor extends AbstractActor{
      */
     public GenericActor(String remotePath){
         this.remotePath = remotePath;
-        this.status = ActorStatusType.STARTED;
+        this.status = ActorStatusType.WAITING;
     }
 
     public void setStatus(ActorStatusType newStatus){
@@ -102,7 +112,7 @@ public abstract class GenericActor extends AbstractActor{
 
     public void sendUnstableMessages(View v){
 
-        logger.info("[" + myId + "] Sending unstable messages");
+        //logger.info("[" + myId + "] Sending unstable messages");
         Iterator<HashMap.Entry<Integer, Message>> itUnstable = unstableMessages.entrySet().iterator();
         while(itUnstable.hasNext()){
             HashMap.Entry<Integer, Message> um = itUnstable.next();
@@ -113,7 +123,7 @@ public abstract class GenericActor extends AbstractActor{
                     continue;
                 }
                 participant.getValue().tell(um.getValue(), getSelf());
-                logger.info("[" + myId + "] Sending unstable message " + um.getValue().body + " to participant " + participant.getKey());
+                //logger.info("[" + myId + "] Sending unstable message " + um.getValue().body + " to participant " + participant.getKey());
             }
             try{
                 networkDelay();
@@ -144,15 +154,34 @@ public abstract class GenericActor extends AbstractActor{
 
     }
 
+    public void sendHeartbeat() {
+        if (this.myId!=0 && status == ActorStatusType.STARTED) {
+            Heartbeat h = new Heartbeat(myId);
+            //System.out.format("[%d] MANAGER: %s\n", myId, manager);
+            System.out.format("[%d] Sent heartbeat to %s\n", myId, manager);
+            manager.tell(h, getSelf());
+            //networkDelay();
+
+            this.getContext().getSystem().scheduler().scheduleOnce(java.time.Duration.ofMillis(500),
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            sendHeartbeat();
+                        }
+                    }, this.getContext().getSystem().dispatcher());
+        }
+    }
+
     public void installView(View vNew){
         // TODO: complete this method
         if(this.v == null || this.v.viewId != vNew.viewId) {
-            logger.info("[" + myId + "] Installed view " + vNew.viewId);
-            //System.out.println(myId+" install view "+vNew.viewId+" <participant list>"); LOGGING (needed: comma-separated participants ID)
+            //logger.info("[" + myId + "] Installed view " + vNew.viewId);
+            logger.info(this.myId+" install view "+vNew.viewId+" "+vNew.participants.keySet().toString().replaceAll("\\[","").replaceAll("\\]","").replaceAll(" ",""));
         }
         this.v = vNew;
         this.vTemp = null;
         this.setStatus(ActorStatusType.STARTED);
+        sendHeartbeat();
     }
 
     public void networkDelay(){
@@ -168,12 +197,12 @@ public abstract class GenericActor extends AbstractActor{
     }
 
     public void sendChatMessage() {
-        if(this.status == ActorStatusType.WAITING){
-            return;
-        }
         Date date = new Date();
         long time = date.getTime();
         String ts = "[" + this.myId + "] " + new Timestamp(time).toString();
+        //New message text
+        ts = this.myId + ":" + messageCounter;
+        messageCounter++;
 
         Message m = new Message(myId, ts);
         Iterator<HashMap.Entry<Integer, ActorRef>> it = v.participants.entrySet().iterator();
@@ -183,8 +212,8 @@ public abstract class GenericActor extends AbstractActor{
                 continue;
             }
             participant.getValue().tell(m, getSelf());
-            logger.info("["+myId+"] Sent new chat message "+ts+" to "+participant.getKey());
-            //System.out.println(myId+" send multicast <seqnumber> within "+v); LOGGING (needed: sequenceNumber)
+            //logger.info("["+myId+"] Sent new chat message "+ts+" to "+participant.getKey());
+            logger.info(myId+" send multicast " + m.body + " within "+v.viewId);
             networkDelay();
         }
 
@@ -213,7 +242,7 @@ public abstract class GenericActor extends AbstractActor{
         sendFlushMessage(request.v);
 
         if(flushMessages.size() < request.v.participants.size()-1){
-            logger.info("Waiting for all flushes" + flushMessages.size() + " " + (request.v.participants.size()-1) );
+            //logger.info("Waiting for all flushes" + flushMessages.size() + " " + (request.v.participants.size()-1) );
             this.getContext().getSystem().scheduler().scheduleOnce(java.time.Duration.ofMillis(1000),
                     new Runnable() {
                         @Override
@@ -234,39 +263,24 @@ public abstract class GenericActor extends AbstractActor{
 
     public void onChatMessageReceived(Message message){
 
-        if(isCrashed()){
-            return;
-        }
+        if(status == ActorStatusType.STARTED) {
 
-        // Check if duplicate
-        if(!delivered.contains(message.body)){
-            unstableMessages.put(message.senderId, message);
-            delivered.add(message.body);
-            logger.info("["+myId+"] Received message "+message.body+" from "+message.senderId);
-            //System.out.println(myId+" deliver multicast <seqnumber> from "+message.senderId+" within "+v); LOGGING (needed: sequenceNumber)
+            // Check if duplicate
+            if (!delivered.contains(message.body)) {
+                unstableMessages.put(message.senderId, message);
+                delivered.add(message.body);
+                //logger.info("["+myId+"] Received message "+message.body+" from "+message.senderId);
+                logger.info(myId + " deliver multicast " + message.body + " from " + message.senderId + " within " + v.viewId);
+            }
         }
 
     }
 
     public void onFlushMessageReceived(FlushMessage flush){
 
-        if(isCrashed()){
-            return;
-        }
-
         flushMessages.add(flush.senderId);
 
     }
-
-//    public void onHeartbeatReceived(Heartbeat heartbeat){
-//
-//        if(isCrashed()){
-//            return;
-//        }
-//        //System.out.format("[%d] Received heartbeat from %d\n", myId, heartbeat.senderId);
-//        heartbeats.put(heartbeat.senderId, heartbeat.getBeat());
-//
-//    }
 
 
 }
