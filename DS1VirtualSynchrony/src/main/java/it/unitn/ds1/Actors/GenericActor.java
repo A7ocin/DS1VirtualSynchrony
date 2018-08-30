@@ -146,7 +146,7 @@ public abstract class GenericActor extends AbstractActor{
 
     public void installView(View vNew){
         // TODO: complete this method
-        if(this.v.viewId != vNew.viewId) {
+        if(this.v == null || this.v.viewId != vNew.viewId) {
             logger.info("[" + myId + "] Installed view " + vNew.viewId);
             //System.out.println(myId+" install view "+vNew.viewId+" <participant list>"); LOGGING (needed: comma-separated participants ID)
         }
