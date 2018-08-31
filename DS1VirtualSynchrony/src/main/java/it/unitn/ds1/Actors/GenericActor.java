@@ -55,7 +55,7 @@ public abstract class GenericActor extends AbstractActor{
     private HashMap<Integer, Message> unstableMessages = new HashMap<Integer, Message>();
     private HashSet<String> delivered = new HashSet<String>();
     public HashSet<Integer> flushMessages = new HashSet<Integer>();
-    public int messageCounter = 0;
+    public int messageCounter;
     public boolean canSendMessages = false;
 
     @Override
@@ -73,6 +73,7 @@ public abstract class GenericActor extends AbstractActor{
     public GenericActor(String remotePath){
         this.remotePath = remotePath;
         this.status = ActorStatusType.WAITING;
+        this.messageCounter = 0;
     }
 
     public void setStatus(ActorStatusType newStatus){
@@ -181,9 +182,9 @@ public abstract class GenericActor extends AbstractActor{
             Integer id = entry.getKey();
             Message message = entry.getValue();
             unstableMessages.remove(message.senderId);
-            if(!delivered.contains(message.body)) {
+            if(!delivered.contains(message.body) && this.v.viewId == message.v.viewId) {
                 logger.info("'''''''''''''''''''''");
-                logger.info(myId + " deliver multicast " + message.body + " from " + message.senderId + " within " + this.v);
+                logger.info(myId + " deliver multicast " + message.body + " from " + message.senderId + " within " + this.v.viewId);
                 delivered.add(message.body);
             }
         }
@@ -218,20 +219,19 @@ public abstract class GenericActor extends AbstractActor{
             long time = date.getTime();
             String ts = "[" + this.myId + "] " + new Timestamp(time).toString();
             //New message text
-            ts = this.myId + "x" + messageCounter;
-            messageCounter++;
+            ts = this.myId + "x" + this.messageCounter;
+            this.messageCounter++;
 
-            Message m = new Message(myId, ts);
+            Message m = new Message(myId, ts, this.v);
             Iterator<HashMap.Entry<Integer, ActorRef>> it = v.participants.entrySet().iterator();
             while (it.hasNext()) {
                 HashMap.Entry<Integer, ActorRef> participant = it.next();
-                if (participant.getKey() == this.myId) {
-                    continue;
+                if (participant.getKey() != this.myId) {
+                    participant.getValue().tell(m, getSelf());
+                    logger.info(myId + " send multicast " + m.body + " within " + v.viewId);
+                    //logger.info("["+myId+"] Sent new chat message "+ts+" to "+participant.getKey());
+                    networkDelay();
                 }
-                participant.getValue().tell(m, getSelf());
-                //logger.info("["+myId+"] Sent new chat message "+ts+" to "+participant.getKey());
-                logger.info(myId + " send multicast " + m.body + " within " + v.viewId);
-                networkDelay();
             }
         }
 
@@ -253,6 +253,8 @@ public abstract class GenericActor extends AbstractActor{
             return;
         }
 
+        canSendMessages = false;
+
         if(this.v == null){
             setStatus(ActorStatusType.WAITING);
             sendFlushMessage(request.v);
@@ -262,7 +264,7 @@ public abstract class GenericActor extends AbstractActor{
         }
 
         setStatus(ActorStatusType.WAITING);
-        canSendMessages = false;
+
         //logger.info("["+myId+"] Actor "+request.senderId+" requested a view change");
 
         sendUnstableMessages(this.v);
@@ -296,7 +298,7 @@ public abstract class GenericActor extends AbstractActor{
         if(status == ActorStatusType.STARTED) {
 
             // Check if duplicate
-            if (!delivered.contains(message.body)) {
+            if (!delivered.contains(message.body) && this.v.viewId == message.v.viewId) {
                 Message toDeliver = null;
                 toDeliver = unstableMessages.get(message.senderId);
                 if(toDeliver != null){
