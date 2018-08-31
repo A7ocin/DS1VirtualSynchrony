@@ -54,8 +54,9 @@ public abstract class GenericActor extends AbstractActor{
     public ActorRef manager;
     private HashMap<Integer, Message> unstableMessages = new HashMap<Integer, Message>();
     private HashSet<String> delivered = new HashSet<String>();
-    private HashSet<Integer> flushMessages = new HashSet<Integer>();
+    public HashSet<Integer> flushMessages = new HashSet<Integer>();
     public int messageCounter = 0;
+    public boolean canSendMessages = false;
 
     @Override
     public void preStart(){
@@ -174,6 +175,18 @@ public abstract class GenericActor extends AbstractActor{
 
     public void installView(View vNew){
         // TODO: complete this method
+
+        while(unstableMessages.size()>0) {
+            HashMap.Entry<Integer, Message> entry = unstableMessages.entrySet().iterator().next();
+            Integer id = entry.getKey();
+            Message message = entry.getValue();
+            unstableMessages.remove(message.senderId);
+            if(!delivered.contains(message.body)) {
+                logger.info("'''''''''''''''''''''");
+                logger.info(myId + " deliver multicast " + message.body + " from " + message.senderId + " within " + this.v);
+                delivered.add(message.body);
+            }
+        }
         if(this.v == null || this.v.viewId != vNew.viewId) {
             //logger.info("[" + myId + "] Installed view " + vNew.viewId);
             logger.info(this.myId+" install view "+vNew.viewId+" "+vNew.participants.keySet().toString().replaceAll("\\[","").replaceAll("\\]","").replaceAll(" ",""));
@@ -181,7 +194,9 @@ public abstract class GenericActor extends AbstractActor{
         this.v = vNew;
         this.vTemp = null;
         this.setStatus(ActorStatusType.STARTED);
+        canSendMessages = true;
         sendHeartbeat();
+
     }
 
     public void networkDelay(){
@@ -197,24 +212,27 @@ public abstract class GenericActor extends AbstractActor{
     }
 
     public void sendChatMessage() {
-        Date date = new Date();
-        long time = date.getTime();
-        String ts = "[" + this.myId + "] " + new Timestamp(time).toString();
-        //New message text
-        ts = this.myId + ":" + messageCounter;
-        messageCounter++;
 
-        Message m = new Message(myId, ts);
-        Iterator<HashMap.Entry<Integer, ActorRef>> it = v.participants.entrySet().iterator();
-        while (it.hasNext()) {
-            HashMap.Entry<Integer, ActorRef> participant = it.next();
-            if (participant.getKey() == this.myId) {
-                continue;
+        if(canSendMessages && status == ActorStatusType.STARTED) {
+            Date date = new Date();
+            long time = date.getTime();
+            String ts = "[" + this.myId + "] " + new Timestamp(time).toString();
+            //New message text
+            ts = this.myId + "x" + messageCounter;
+            messageCounter++;
+
+            Message m = new Message(myId, ts);
+            Iterator<HashMap.Entry<Integer, ActorRef>> it = v.participants.entrySet().iterator();
+            while (it.hasNext()) {
+                HashMap.Entry<Integer, ActorRef> participant = it.next();
+                if (participant.getKey() == this.myId) {
+                    continue;
+                }
+                participant.getValue().tell(m, getSelf());
+                //logger.info("["+myId+"] Sent new chat message "+ts+" to "+participant.getKey());
+                logger.info(myId + " send multicast " + m.body + " within " + v.viewId);
+                networkDelay();
             }
-            participant.getValue().tell(m, getSelf());
-            //logger.info("["+myId+"] Sent new chat message "+ts+" to "+participant.getKey());
-            logger.info(myId+" send multicast " + m.body + " within "+v.viewId);
-            networkDelay();
         }
 
         this.getContext().getSystem().scheduler().scheduleOnce(java.time.Duration.ofMillis(1000),
@@ -234,15 +252,25 @@ public abstract class GenericActor extends AbstractActor{
             // THIS RETURN COULD BE PROBLEMATIC
             return;
         }
+
+        if(this.v == null){
+            setStatus(ActorStatusType.WAITING);
+            sendFlushMessage(request.v);
+            installView(request.v);
+            sendChatMessage();
+            return;
+        }
+
         setStatus(ActorStatusType.WAITING);
+        canSendMessages = false;
         //logger.info("["+myId+"] Actor "+request.senderId+" requested a view change");
 
-        sendUnstableMessages(request.v);
+        sendUnstableMessages(this.v);
 
-        sendFlushMessage(request.v);
+        sendFlushMessage(this.v);
 
-        if(flushMessages.size() < request.v.participants.size()-1){
-            //logger.info("Waiting for all flushes" + flushMessages.size() + " " + (request.v.participants.size()-1) );
+        if (flushMessages.size() < request.v.participants.size() - 1) {
+            logger.info("[" + this.myId + "] Waiting for all flushes" + flushMessages.size() + " " + (request.v.participants.size() - 1));
             this.getContext().getSystem().scheduler().scheduleOnce(java.time.Duration.ofMillis(1000),
                     new Runnable() {
                         @Override
@@ -251,13 +279,15 @@ public abstract class GenericActor extends AbstractActor{
                             //onChangeView(request);
                         }
                     }, this.getContext().getSystem().dispatcher());
+            return;
+        } else {
+
+            installView(request.v);
+
+            //sendHeartbeat();
+
+            sendChatMessage();
         }
-
-        installView(request.v);
-
-        //sendHeartbeat();
-
-        sendChatMessage();
 
     }
 
@@ -267,10 +297,15 @@ public abstract class GenericActor extends AbstractActor{
 
             // Check if duplicate
             if (!delivered.contains(message.body)) {
+                Message toDeliver = null;
+                toDeliver = unstableMessages.get(message.senderId);
+                if(toDeliver != null){
+                    unstableMessages.remove(toDeliver.senderId);
+                    logger.info(myId + " deliver multicast " + toDeliver.body + " from " + toDeliver.senderId + " within " + v.viewId);
+                    delivered.add(toDeliver.body);
+                }
                 unstableMessages.put(message.senderId, message);
-                delivered.add(message.body);
                 //logger.info("["+myId+"] Received message "+message.body+" from "+message.senderId);
-                logger.info(myId + " deliver multicast " + message.body + " from " + message.senderId + " within " + v.viewId);
             }
         }
 

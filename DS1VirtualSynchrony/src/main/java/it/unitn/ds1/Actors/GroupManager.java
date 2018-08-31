@@ -89,6 +89,16 @@ public class GroupManager extends GenericActor{
 
     private void requestNewView(int actorId, ActorRef actor, boolean add){
 
+        if(flushMessages.size() < this.v.participants.size()-1){
+            this.getContext().getSystem().scheduler().scheduleOnce(java.time.Duration.ofMillis(1000),
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            requestNewView(actorId, actor, add);
+                        }
+                    }, this.getContext().getSystem().dispatcher());
+            return;
+        }
         //logger.info("["+myId+"] Requesting new view");
         View out;
         if(add) {
