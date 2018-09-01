@@ -4,6 +4,29 @@ A.Y. 2017 - 2018
 
 Authors: *Nicola Garau* and *Salvatore Manfredi*
 
+## 0 - Usage
+
+In order to generate a group, run multiple istances of `DS1VirtualSynchrony\VSSynchronyC++.exe`
+
+### Group manager 
+
+If the instance identifies a group manager, input the following values:
+
+- `Manager`: y
+- `IP address`: 127.0.0.1
+- `Port`: any free port number (e.g. 10001)
+
+### Participant
+
+If the instance identifies a group participant, input the following values:
+
+- `Manager`: n
+- `IP address`: 127.0.0.1
+- `Port`: any free port number (e.g. 10002)
+- `Manager port`: the port chosen 
+
+**Note**: each participant needs a different port.
+
 
 ## 1 - Introduction
 
